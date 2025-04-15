@@ -1,5 +1,6 @@
 #Requires AutoHotkey >=v2.0.5
 #Include <AquaHotkey_Minimal>
+#DllLoad "uxtheme.dll"
 
 /**
  * Tanuki is an extension that allows the use of Gui themes for
@@ -283,9 +284,17 @@ class Tanuki extends AquaHotkey
                 Theme := Tanuki.PrepareSubTheme(Theme, "Button")
                 Tanuki.ApplyFont(this, Theme)
 
+                if (HasProp(Theme, "DarkMode") && Theme.DarkMode) {
+                    DllCall("uxtheme\SetWindowTheme",
+                            "Ptr", this.Hwnd, 
+                            "Str", "DarkMode_Explorer",
+                            "Ptr", 0)
+                }
+
                 if (HasProp(Theme, "Background")) {
                     this.Opt("Background" . Theme.Background)
                 }
+                
                 return Theme
             }
         }
@@ -321,7 +330,6 @@ class Tanuki extends AquaHotkey
         AddDropDownList(Opt?, Items?) => this.Add("DropDownList", Opt?, Items?)
 
         class DDL {
-            ; TODO "upper part" not coloured
             ApplyTheme(Theme) {
                 Theme := Tanuki.PrepareSubTheme(Theme, "DDL")
                 Tanuki.ApplyFont(this, Theme)
@@ -330,14 +338,22 @@ class Tanuki extends AquaHotkey
                     this.Opt("Background" . Theme.Background)
                 }
 
+                if (HasProp(Theme, "DarkMode") && Theme.DarkMode) {
+                    DllCall("uxtheme\SetWindowTheme",
+                            "Ptr", this.Hwnd,
+                            "Str", "DarkMode_CFD",
+                            "Ptr", 0)
+                }
+
                 static WM_CTLCOLORLISTBOX := 0x0134
                 this.OnMessage(WM_CTLCOLORLISTBOX, RenderListBox, false)
                 this.OnMessage(WM_CTLCOLORLISTBOX, RenderListBox)
                 return Theme
                 
                 RenderListBox(LbCtl, wParam, lParam, Hwnd) {
-                    if (HasProp(Theme, "Foreground")) {
-                        TextColor := Tanuki.Swap_RGB_BGR(Theme.Foreground)
+                    if (HasProp(Theme, "Font") && HasProp(Theme.Font, "Color"))
+                    {
+                        TextColor := Tanuki.Swap_RGB_BGR(Theme.Font.Color)
                         DllCall("SetTextColor",
                                 "Ptr", wParam,
                                 "UInt", TextColor)
@@ -360,6 +376,12 @@ class Tanuki extends AquaHotkey
             ApplyTheme(Theme) {
                 Theme := Tanuki.PrepareSubTheme(Theme, "Edit")
                 Tanuki.ApplyFont(this, Theme)
+                if (HasProp(Theme, "DarkMode") && Theme.DarkMode) {
+                    DllCall("uxtheme\SetWindowTheme",
+                            "Ptr", this.Hwnd,
+                            "Str", "DarkMode_Explorer",
+                            "Ptr", 0)
+                }
                 if (HasProp(Theme, "Background")) {
                     this.Opt("Background" . Theme.Background)
                 }
@@ -407,7 +429,43 @@ class Tanuki extends AquaHotkey
 
         class MonthCal {
             ApplyTheme(Theme) {
+                Theme := Tanuki.PrepareSubTheme(Theme, "MonthCal")
 
+                DllCall("uxtheme\SetWindowTheme",
+                        "Ptr", this.Hwnd,
+                        "Str", "",
+                        "Str", "")
+                
+                static MCM_SETCOLOR := 0x100A
+                if (HasProp(Theme, "Background")) {
+                    BackgroundColor := Tanuki.Swap_RGB_BGR(Theme.Background)
+                    SendMessage(MCM_SETCOLOR, 0, BackgroundColor, this)
+                }
+
+                if (HasProp(Theme, "Font") && HasProp(Theme.Font, "Color")) {
+                    TextColor := Tanuki.Swap_RGB_BGR(Theme.Font.Color)
+                    SendMessage(MCM_SETCOLOR, 1, TextColor, this)
+                }
+
+                if (HasProp(Theme, "TitleBackground")) {
+                    TitleBk := Tanuki.Swap_RGB_BGR(Theme.TitleBackground)
+                    SendMessage(MCM_SETCOLOR, 2, TitleBk, this)
+                }
+
+                if (HasProp(Theme, "TitleTextColor")) {
+                    TitleTx := Tanuki.Swap_RGB_BGR(Theme.TitleTextColor)
+                    SendMessage(MCM_SETCOLOR, 3, TitleTx, this)
+                }
+
+                if (HasProp(Theme, "MonthBackground")) {
+                    MonthBk := Tanuki.Swap_RGB_BGR(Theme.MonthBackground)
+                    SendMessage(MCM_SETCOLOR, 4, MonthBk, this)
+                }
+                
+                if (HasProp(Theme, "TrailingTextColor")) {
+                    TrailingTx := Tanuki.Swap_RGB_BGR(Theme.TrailingTextColor)
+                    SendMessage(MCM_SETCOLOR, 5, TrailingTx, this)
+                }
             }
         }
 
@@ -677,6 +735,11 @@ class Catppuccin {
 
     class Edit {
         static Background => "0x1E1E2E"
+        static DarkMode   => true
+
+        class Font {
+            static Color => "0xE0E0E0"
+        }
     }
 
     class Text {
@@ -692,7 +755,23 @@ class Catppuccin {
     }
 
     class DDL {
-        static Background => "0x202020"
+        static Background => "0x404040"
+
+        class Font {
+            static Color => "0xE0E0E0"
+        }
+    }
+
+    class MonthCal {
+        static Background        => Catppuccin.Background
+        static TitleBackground   => Catppuccin.Background
+        static TitleTextColor    => "0xE0E0E0"
+        static MonthBackground   => Catppuccin.Background
+        static TrailingTextColor => "0x202020"
+
+        class Font {
+            static Color => "0xE0E0E0"
+        }
     }
 }
 
@@ -708,7 +787,11 @@ g := Gui("Theme:Catppuccin")
 ;     ; single quotes.
 ;     g := Gui('Theme:"file/to/myTheme.json"')
 ; 
-Btn := g.AddButton("w50 h50", "Hello, world!")
+Btn := g.AddButton(unset, "Hello, world!")
+
+DDLCtl   := g.AddDropDownList(unset, Array("this", "is", "a", "test"))
+Edt      := g.AddEdit("r1 w380")
+MonthCal := g.AddMonthCal()
 
 ; alternatively, set themes like this:
 ; 
@@ -719,5 +802,5 @@ Btn := g.AddButton("w50 h50", "Hello, world!")
 ;     EditCtl.Theme := "Dark"
 ;     EditCtl.Theme := "path/to/darkMode.json"
 ;     EditCtl.Theme := { Background: ... }
-g.Show("w100 h100")
+g.Show("w400 h200")
 
