@@ -90,7 +90,10 @@ class Tanuki extends AquaHotkey
              */
             Theme {
                 set {
-                    this.ApplyTheme(Tanuki.LoadTheme(value))
+                    Theme := this.ApplyTheme(Tanuki.LoadTheme(value))
+                    this.DefineProp("Theme", {
+                        Get: (Instance) => Theme.Clone()
+                    })
                 }
             }
 
@@ -219,11 +222,21 @@ class Tanuki extends AquaHotkey
 
                 ; set some general options like background color, font etc. here
                 ; ...
-                if (ObjHasOwnProp(Theme, "DarkMode")) {
+                if (HasProp(Theme, "DarkMode")) {
                     this.DarkMode := Theme.DarkMode
                 }
-                if (ObjHasOwnProp(Theme, "Background")) {
+
+                if (HasProp(Theme, "Background")) {
                     this.BackColor := Theme.Background
+                }
+
+                if (HasProp(Theme, "Title")) {
+                    if (HasProp(Theme.Title, "Background")) {
+                        this.TitleColor := Theme.Title.Background
+                    }
+                    if (HasProp(Theme.Title, "Foreground")) {
+                        this.TitleTextColor := Theme.Title.Foreground
+                    }
                 }
 
                 ; and then loop through all controls
@@ -232,19 +245,33 @@ class Tanuki extends AquaHotkey
                 }
 
                 this.DefineProp("Theme", {
-                    Get: (Instance) => Theme ; TODO do I need to .Clone() this?
+                    Get: (Instance) => Theme.Clone()
                 })
             }
         }
 
         /**
-         * Activates or deactivates dark mode for this Gui.
+         * Enables or disables dark mode for the window and its child controls.
+         * When set to `true`, the system theme is overridden to use dark
+         * styling.
+         * 
+         * Note: Requires Windows 10 1809+ (build 17763).
          * 
          * @param   {Boolean}  value  switch dark mode on/off
          * @return  {Boolean}
          */
         DarkMode {
-            get => false
+            get {
+                static DWMWA_USE_IMMERSIVE_DARK_MODE := (
+                    19 + (VerCompare(A_OSVersion, "10.0.18985") >= 0)
+                )
+
+                DllCall("dwmapi\DwmGetWindowAttribute", "Ptr", this.Hwnd,
+                        "Int", DWMWA_USE_IMMERSIVE_DARK_MODE,
+                        "Int*", &(Result := 0),
+                        "UInt", 4)
+                return !!Result
+            }
             set {
                 static DWMWA_USE_IMMERSIVE_DARK_MODE := (
                     19 + (VerCompare(A_OSVersion, "10.0.18985") >= 0)
@@ -255,12 +282,63 @@ class Tanuki extends AquaHotkey
                         "Int", DWMWA_USE_IMMERSIVE_DARK_MODE,
                         "Int*", OnOff,
                         "UInt", 4)
-                
-                this.DefineProp("DarkMode", {
-                    Get: (Instance) => OnOff
-                })
             }
         }
+
+        /**
+         * Sets and retrieves the background color of the window's title bar.
+         * This properties expects RGB values.
+         * 
+         * Requires Windows 11.
+         * @param   {Integer}  value  RGB value of title bar background
+         * @return  {Integer}
+         */
+        TitleColor {
+            get {
+                static DWMWA_CAPTION_COLOR := 0x0035
+                DllCall("dwmapi\DwmGetWindowAttribute", "Ptr", this.Hwnd,
+                        "Int", DWMWA_CAPTION_COLOR,
+                        "Int*", &(Result := 0),
+                        "UInt", 4)
+                return Result
+            }
+            set {
+                static DWMWA_CAPTION_COLOR := 0x0035
+                Color := Tanuki.Swap_RGB_BGR(value)
+                DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", this.Hwnd,
+                        "Int", DWMWA_CAPTION_COLOR,
+                        "Int*", Color,
+                        "UInt", 4)
+            }
+        }
+
+        /**
+         * Sets and retrieves the text color of the window's title bar.
+         * This property expected RGB values.
+         * 
+         * Requires Windows 11.
+         * @param   {Integer}  value  RGB value of title bar text color
+         * @return  {Integer}
+         */
+        TitleTextColor {
+            get {
+                static DWMWA_TEXT_COLOR := 0x0036               
+                DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", this.Hwnd,
+                        "Int", DWMWA_TEXT_COLOR,
+                        "Int*", &(Result := 0),
+                        "UInt", 4)
+                return Result
+            }
+            set {
+                static DWMWA_TEXT_COLOR := 0x0036
+                Color := Tanuki.Swap_RGB_BGR(value)
+                DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", this.Hwnd,
+                        "Int", DWMWA_TEXT_COLOR,
+                        "Int*", Color,
+                        "UInt", 4)
+            }
+        }
+
 
         /**
          * Adds a new button to the Gui.
@@ -423,6 +501,88 @@ class Tanuki extends AquaHotkey
 
         class ListView {
             ApplyTheme(Theme) {
+                static LVS_EX_DOUBLEBUFFER := 0x00010000
+                static NM_CUSTOMDRAW      := -12
+                static UIS_SET            := 0x0001
+                static UISF_HIDEFOCUS     := 0x0001
+
+                static WM_CHANGEUISTATE   := 0x0127
+                static WM_NOTIFY          := 0x004E
+                static WM_THEMECHANGED    := 0x031A
+
+                static LVM_SETBKCOLOR     := 0x1001
+                static LVM_SETTEXTCOLOR   := 0x1024
+                static LVM_SETTEXTBKCOLOR := 0x1026
+                static LVM_GETHEADER      := 0x101F
+
+                DllCall("uxtheme\SetWindowTheme",
+                        "Ptr", this.Hwnd,
+                        "Str", "",
+                        "Ptr", 0)
+                
+                Theme := Tanuki.PrepareSubTheme(Theme, "ListView")
+
+                if (HasProp(Theme, "Background")) {
+                    this.Opt("Background" . Theme.Background)
+                    Background := Tanuki.Swap_RGB_BGR(Theme.Background)
+                    SendMessage(LVM_SETBKCOLOR, 0, Background, this)
+
+                    if (!HasProp(Theme, "TextBackground")) {
+                        SendMessage(LVM_SETTEXTBKCOLOR, 0, Background, this)
+                    }
+                }
+
+                if (HasProp(Theme, "TextBackground")) {
+                    TextBackground := Tanuki.Swap_RGB_BGR(Theme.TextBackground)
+                    SendMessage(LVM_SETTEXTBKCOLOR, 0, TextBackground, this)
+                }
+
+                this.OnMessage(WM_THEMECHANGED, (*) => 0)
+
+                HeaderHwnd := SendMessage(LVM_GETHEADER, 0, 0, this)
+                DllCall("uxtheme\SetWindowTheme",
+                        "Ptr", HeaderHwnd,
+                        "Str", "DarkMode_ItemsView",
+                        "Ptr", 0)
+
+                if (HasProp(Theme, "Foreground")) {
+                    Foreground := Tanuki.Swap_RGB_BGR(Theme.Foreground)
+                    SendMessage(LVM_SETTEXTCOLOR, 0, Foreground, this)
+
+                    this.OnMessage(WM_NOTIFY, (Hwnd, wParam, lParam, Msg) {
+                        static CDDS_ITEMPREPAINT      := 0x00010001
+                        static CDDS_SUBITEM           := 0x00020000
+                        static CDDS_PREPAINT          := 0x00000001
+
+                        static CDRF_DODEFAULT         := 0x00000000
+                        static CDRF_NOTIFYITEMDRAW    := 0x00000020
+                        static CDRF_NOTIFYSUBITEMDRAW := 0x00000020
+
+                        Code := StructFromPtr(Tanuki.NMHDR, lParam).Code
+                        if (Code != NM_CUSTOMDRAW) {
+                            return
+                        }
+
+                        nmcd  := StructFromPtr(Tanuki.NMCUSTOMDRAW, lParam)
+                        if (nmcd.hdr.HwndFrom != HeaderHwnd) {
+                            return
+                        }
+                        Stage := nmcd.dwDrawStage
+                        if (Stage == CDDS_PREPAINT) {
+                            return CDRF_NOTIFYITEMDRAW
+                        }
+                        if (Stage == CDDS_ITEMPREPAINT) {
+                            DllCall("SetTextColor",
+                                    "Ptr", nmcd.hdc,
+                                    "UInt", Foreground)
+                        }
+                        return CDRF_DODEFAULT
+                    })
+                }
+
+                this.Opt("+LV" . LVS_EX_DOUBLEBUFFER)
+                UIState := (UIS_SET << 8) | UISF_HIDEFOCUS
+                SendMessage(WM_CHANGEUISTATE, UIState, 0, this)
 
             }
         }
@@ -430,48 +590,53 @@ class Tanuki extends AquaHotkey
         class MonthCal {
             ApplyTheme(Theme) {
                 Theme := Tanuki.PrepareSubTheme(Theme, "MonthCal")
-
                 DllCall("uxtheme\SetWindowTheme",
                         "Ptr", this.Hwnd,
                         "Str", "",
                         "Str", "")
-                
-                static MCM_SETCOLOR := 0x100A
+
                 if (HasProp(Theme, "Background")) {
-                    BackgroundColor := Tanuki.Swap_RGB_BGR(Theme.Background)
-                    SendMessage(MCM_SETCOLOR, 0, BackgroundColor, this)
+                    SetColor(0, Theme.Background)
                 }
 
                 if (HasProp(Theme, "Font") && HasProp(Theme.Font, "Color")) {
-                    TextColor := Tanuki.Swap_RGB_BGR(Theme.Font.Color)
-                    SendMessage(MCM_SETCOLOR, 1, TextColor, this)
+                    SetColor(1, Theme.Font.Color)
+                } else if (HasProp(Theme, "Foreground")) {
+                    SetColor(1, Theme.Foreground)
                 }
 
-                if (HasProp(Theme, "TitleBackground")) {
-                    TitleBk := Tanuki.Swap_RGB_BGR(Theme.TitleBackground)
-                    SendMessage(MCM_SETCOLOR, 2, TitleBk, this)
+                if (HasProp(Theme, "Title") && HasProp(Theme.Title, "Background")) {
+                    SetColor(2, Theme.Title.Background)
+                } else if (HasProp(Theme, "Background")) {
+                    SetColor(2, Theme.Background)
                 }
 
-                if (HasProp(Theme, "TitleTextColor")) {
-                    TitleTx := Tanuki.Swap_RGB_BGR(Theme.TitleTextColor)
-                    SendMessage(MCM_SETCOLOR, 3, TitleTx, this)
+                if (HasProp(Theme, "Title") && HasProp(Theme.Title, "Foreground")) {
+                    SetColor(3, Theme.Title.Foreground)
+                } else if (HasProp(Theme, "Foreground")) {
+                    SetColor(3, Theme.Foreground)
                 }
 
                 if (HasProp(Theme, "MonthBackground")) {
-                    MonthBk := Tanuki.Swap_RGB_BGR(Theme.MonthBackground)
-                    SendMessage(MCM_SETCOLOR, 4, MonthBk, this)
+                    SetColor(4, Theme.MonthBackground)
+                } else if (HasProp(Theme, "Background")) {
+                    SetColor(4, Theme.Background)
                 }
                 
-                if (HasProp(Theme, "TrailingTextColor")) {
-                    TrailingTx := Tanuki.Swap_RGB_BGR(Theme.TrailingTextColor)
-                    SendMessage(MCM_SETCOLOR, 5, TrailingTx, this)
+                if (HasProp(Theme, "TrailingText")) {
+                    SetColor(5, Theme.TrailingText)
+                }
+
+                SetColor(Opt, Color) {
+                    static MCM_SETCOLOR := 0x100A
+                    SendMessage(0x100A, Opt, Tanuki.Swap_RGB_BGR(Color), this)
                 }
             }
         }
 
         class Picture {
             ApplyTheme(Theme) {
-
+                return
             }
         }
 
@@ -481,15 +646,24 @@ class Tanuki extends AquaHotkey
             }
         }
 
+        ; TODO font doesn't change
         class Radio {
             ApplyTheme(Theme) {
 
             }
         }
 
+        ; TODO still looks weird
         class Slider {
             ApplyTheme(Theme) {
+                Theme := Tanuki.PrepareSubTheme(Theme, "Slider")
 
+                if (HasProp(Theme, "Background")) {
+                    this.Opt("Background" . Theme.Background)
+                }
+                if (HasProp(Theme, "Foreground")) {
+                    this.Opt("c" . Theme.Foreground)
+                }
             }
         }
 
@@ -704,29 +878,33 @@ class Tanuki extends AquaHotkey
     }
 
     class RECT extends AquaHotkey_Ignore {
-        Left   : i32
-        Top    : i32
-        Right  : i32
-        Bottom : i32
+        left: i32
+        top: i32
+        right: i32
+        bottom: i32
     }
 
-    class DRAWITEMSTRUCT extends AquaHotkey_Ignore {
-        ControlType : u32
-        ControlId   : u32
-        ItemId      : u32
-        ItemAction  : u32
-        ItemState   : u32
-        HwndItem    : uPtr
-        hDC         : uPtr
-        Rect        : Tanuki.RECT
-        ItemData    : uPtr
+    class NMHDR extends AquaHotkey_Ignore {
+        hwndFrom: uptr
+        idFrom  : uptr
+        code    : i32
     }
+
+    class NMCUSTOMDRAW extends AquaHotkey_Ignore {
+        hdr        : Tanuki.NMHDR
+        dwDrawStage: u32
+        hdc        : uptr
+        rc         : Tanuki.RECT
+        dwItemSpec : uptr
+        uItemState : u32
+        lItemlParam: iptr
+    }
+
 }
 
-; An object that is meant to hold all style settings. It can be a simple
-; object instead of a class, but this way e.g. it cannot be overwritten
 class Catppuccin {
     static Background => "0x1E1E2E"
+    static Foreground => "0xE0E0E0"
     static DarkMode   => true
 
     class Button {
@@ -756,6 +934,7 @@ class Catppuccin {
 
     class DDL {
         static Background => "0x404040"
+        static DarkMode   => true
 
         class Font {
             static Color => "0xE0E0E0"
@@ -763,44 +942,33 @@ class Catppuccin {
     }
 
     class MonthCal {
-        static Background        => Catppuccin.Background
-        static TitleBackground   => Catppuccin.Background
-        static TitleTextColor    => "0xE0E0E0"
-        static MonthBackground   => Catppuccin.Background
-        static TrailingTextColor => "0x202020"
+        static TrailingText => "0x202020"
+    }
 
-        class Font {
-            static Color => "0xE0E0E0"
-        }
+    class Slider {
+        ; TODO naming scheme of this
+        static Background => "0x662222"
+        static Foreground => "0x202020"
+    }
+
+    class ListView {
+        static Background     => "0x1E1E2E"
+        static Foreground     => "0x880000"
+        static TextBackground => "0x1E1E2E"
     }
 }
 
-; probably the easiest way to do it.
-; "Catppuccin" refers to the class above. It can be any object at all, or a
-; path to a JSON file.
 g := Gui("Theme:Catppuccin")
 
-; load a JSON like this (not finished yet... I can't find a good JSON lib for
-; some reason (do you know one?))
-;     
-;     ; you need to use double quotes `"`, because files can contain
-;     ; single quotes.
-;     g := Gui('Theme:"file/to/myTheme.json"')
-; 
 Btn := g.AddButton(unset, "Hello, world!")
 
 DDLCtl   := g.AddDropDownList(unset, Array("this", "is", "a", "test"))
 Edt      := g.AddEdit("r1 w380")
 MonthCal := g.AddMonthCal()
+SldrCtl  := g.AddSlider("r1 w350", 50)
+RadioCtl := g.AddRadio(unset, "Click me?")
+LVCtl    := g.AddListView(unset, StrSplit("I hate ni -", A_Space))
 
-; alternatively, set themes like this:
-; 
-;     g.Theme := "Catppuccin"
-;     g.Theme := "path/to/myTheme.json"
-;     g.Theme := { Background: ... }
-;     ; ----
-;     EditCtl.Theme := "Dark"
-;     EditCtl.Theme := "path/to/darkMode.json"
-;     EditCtl.Theme := { Background: ... }
-g.Show("w400 h200")
+g.Show()
+
 
