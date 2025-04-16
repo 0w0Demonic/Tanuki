@@ -1,5 +1,5 @@
 #Requires AutoHotkey >=v2.0.5
-#Include <AquaHotkey_Minimal>
+#Include <AquaHotkey>
 #DllLoad "uxtheme.dll"
 
 /**
@@ -122,42 +122,74 @@ class Tanuki extends AquaHotkey
         }
 
         /**
+         * Adds a checkbox control to the Gui.
          * 
+         * @param   {String?}  Opt  additional options
+         * @param   {String?}  Txt  text to display in the checkbox
+         * @return  {Gui.CheckBox}
          */
         AddCheckBox(Opt?, Txt?) => this.Add("CheckBox", Opt?, Txt?)
 
         /**
+         * Adds a ComboBox control to the Gui.
          * 
+         * @param   {String?}  Gui    additional options
+         * @param   {Array?}   Items  a list of items
+         * @return  {Gui.ComboBox}
          */
         AddComboBox(Opt?, Items?) => this.Add("ComboBox", Opt?, Items?)
 
         /**
+         * Adds a DateTime control to the Gui.
          * 
+         * @param   {String?}  Opt     additional options
+         * @param   {String?}  Format  format string
+         * @return  {Gui.DateTime}
          */
-        AddDateTime(Opt?, Date?) => this.Add("DateTime", Opt?, Date?)
+        AddDateTime(Opt?, Format?) => this.Add("DateTime", Opt?, Format?)
 
         /**
+         * Adds a group box control to the Gui.
          * 
+         * @param   {String?}  Opt  additional options
+         * @param   {String?}  Txt  text to display in the group box
+         * @return  {Gui.GroupBox}
          */
         AddGroupBox(Opt?, Txt?) => this.Add("GroupBox", Opt?, Txt?)
 
         /**
+         * Adds a hotkey control to the Gui.
          * 
+         * @param   {String?}  Opt  additional options
+         * @param   {String?}  Txt  the text to display
+         * @return  {Gui.Hotkey}
          */
         AddHotkey(Opt?) => this.Add("Hotkey", Opt?)
 
         /**
+         * Adds a text control to the Gui which can contain links.
          * 
+         * @param   {String?}  Opt  additional options
+         * @param   {String?}  Txt  the text to display
+         * @return  {Gui.Link}
          */
         AddLink(Opt?, Txt?) => this.Add("Link", Opt?, Txt?)
 
         /**
+         * Adds a ListView control to the Gui.
          * 
+         * @param   {String?}  Opt    additional options
+         * @param   {Array?}   Items  a list of items
+         * @return  {Gui.ListView}
          */
         AddListView(Opt?, Items?) => this.Add("ListView", Opt?, Items?)
 
         /**
+         * Adds a calendar control to the Gui.
          * 
+         * @param   {String?}  Opt   additional options
+         * @param   {String?}  Date  the range of dates available
+         * @return  {Gui.MonthCal}
          */
         AddMonthCal(Opt?, Date?) => this.Add("MonthCal", Opt?, Date?)
 
@@ -220,8 +252,6 @@ class Tanuki extends AquaHotkey
             set {
                 Theme := Tanuki.LoadTheme(value)
 
-                ; set some general options like background color, font etc. here
-                ; ...
                 if (HasProp(Theme, "DarkMode")) {
                     this.DarkMode := Theme.DarkMode
                 }
@@ -500,6 +530,7 @@ class Tanuki extends AquaHotkey
         }
 
         class ListView {
+            ; TODO Font.Color should override Foreground
             ApplyTheme(Theme) {
                 static LVS_EX_DOUBLEBUFFER := 0x00010000
                 static NM_CUSTOMDRAW      := -12
@@ -542,42 +573,92 @@ class Tanuki extends AquaHotkey
                 HeaderHwnd := SendMessage(LVM_GETHEADER, 0, 0, this)
                 DllCall("uxtheme\SetWindowTheme",
                         "Ptr", HeaderHwnd,
-                        "Str", "DarkMode_ItemsView",
+                        "Str", "",
                         "Ptr", 0)
 
                 if (HasProp(Theme, "Foreground")) {
                     Foreground := Tanuki.Swap_RGB_BGR(Theme.Foreground)
                     SendMessage(LVM_SETTEXTCOLOR, 0, Foreground, this)
+        ; >>>>
+        this.OnMessage(WM_NOTIFY, (Hwnd, wParam, lParam, Msg) {
+            static CDDS_PREPAINT          := 0x00000001
+            static CDDS_POSTPAINT         := 0x00000002
+            static CDDS_ITEMPREPAINT      := 0x00010001
+            static CDDS_SUBITEM           := 0x00020000
 
-                    this.OnMessage(WM_NOTIFY, (Hwnd, wParam, lParam, Msg) {
-                        static CDDS_ITEMPREPAINT      := 0x00010001
-                        static CDDS_SUBITEM           := 0x00020000
-                        static CDDS_PREPAINT          := 0x00000001
+            static CDRF_DODEFAULT         := 0x00000000
+            static CDRF_NEWFONT           := 0x00000002
+            static CDRF_SKIPDEFAULT       := 0x00000004
+            static CDRF_NOTIFYPOSTPAINT   := 0x00000010
+            static CDRF_NOTIFYITEMDRAW    := 0x00000020
+            static CDRF_NOTIFYSUBITEMDRAW := 0x00000020
 
-                        static CDRF_DODEFAULT         := 0x00000000
-                        static CDRF_NOTIFYITEMDRAW    := 0x00000020
-                        static CDRF_NOTIFYSUBITEMDRAW := 0x00000020
+            static DCBrush := DllCall("GetStockObject", "UInt", 18)
 
-                        Code := StructFromPtr(Tanuki.NMHDR, lParam).Code
-                        if (Code != NM_CUSTOMDRAW) {
-                            return
-                        }
+            Code := StructFromPtr(Tanuki.NMHDR, lParam).Code
+            if (Code != NM_CUSTOMDRAW) {
+                return
+            }
 
-                        nmcd  := StructFromPtr(Tanuki.NMCUSTOMDRAW, lParam)
-                        if (nmcd.hdr.HwndFrom != HeaderHwnd) {
-                            return
-                        }
-                        Stage := nmcd.dwDrawStage
-                        if (Stage == CDDS_PREPAINT) {
-                            return CDRF_NOTIFYITEMDRAW
-                        }
-                        if (Stage == CDDS_ITEMPREPAINT) {
-                            DllCall("SetTextColor",
-                                    "Ptr", nmcd.hdc,
-                                    "UInt", Foreground)
-                        }
-                        return CDRF_DODEFAULT
-                    })
+            nmcd  := StructFromPtr(Tanuki.NMCUSTOMDRAW, lParam)
+            if (nmcd.hdr.HwndFrom != HeaderHwnd) {
+                return CDRF_DODEFAULT
+            }
+            Stage := nmcd.dwDrawStage
+
+            if (Stage == CDDS_PREPAINT) {
+                return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT
+            }
+            if (Stage == CDDS_ITEMPREPAINT) {
+                hDC := nmcd.hDC
+                rc  := nmcd.rc
+
+                Item := Tanuki.HDITEM()
+                VarSetStrCapacity(&ItemTxt, 520)
+                Item.mask := 0x86
+                Item.pszText := StrPtr(ItemTxt)
+                Item.cchTextMax := 260
+                SendMessage(0x120B, nmcd.dwItemSpec, ObjGetDataPtr(Item), HeaderHwnd)
+
+                VarSetStrCapacity(&ItemTxt, -1)
+                
+                DllCall("SetDCBrushColor", "Ptr", hDC, "UInt", TextBackground)
+                DllCall("FillRect", "Ptr", hDC, Tanuki.RECT, nmcd.rc, "Ptr", DCBrush)
+
+                ; TODO make this rect smaller
+                NewRc := Tanuki.RECT()
+                DllCall("CopyRect", Tanuki.RECT, NewRc, Tanuki.RECT, Rc)
+
+                DllCall("SetBkMode", "Ptr", hDC, "UInt", 0)
+                DllCall("SetTextColor", "Ptr", hDC, "Uint", Foreground)
+
+                DllCall("DrawText", "Ptr", hDC, "Ptr", StrPtr(ItemTxt),
+                        "Int", StrLen(ItemTxt), Tanuki.RECT, rc, "UInt", 0x0204)
+                
+                return CDRF_SKIPDEFAULT
+            }
+            if (Stage == CDDS_POSTPAINT) {
+                ClientRc   := Tanuki.RECT()
+                LastItemRc := Tanuki.RECT()
+
+                DllCall("GetClientRect", "Ptr", HeaderHwnd, Tanuki.RECT, ClientRc)
+                Count := SendMessage(0x1200, 0, 0, HeaderHwnd)
+                SendMessage(0x1207, Count - 1, ObjGetDataPtr(LastItemRc), HeaderHwnd)
+
+                R1 := ClientRc.Right
+                R2 := LastItemRc.Right
+                if (R2 < R1) {
+                    hDC           := nmcd.hDC
+                    ClientRc.Left := R2
+
+                    DllCall("SetDCBrushColor", "Ptr", hDC, "UInt", TextBackground)
+                    DllCall("FillRect", "Ptr", hDC, Tanuki.RECT, ClientRc, "Ptr", DCBrush)
+                }
+                return CDRF_SKIPDEFAULT
+            }
+            return CDRF_DODEFAULT
+        })
+        ; <<<<
                 }
 
                 this.Opt("+LV" . LVS_EX_DOUBLEBUFFER)
@@ -878,26 +959,40 @@ class Tanuki extends AquaHotkey
     }
 
     class RECT extends AquaHotkey_Ignore {
-        left: i32
-        top: i32
-        right: i32
-        bottom: i32
+        left   : i32
+        top    : i32
+        right  : i32
+        bottom : i32
     }
 
     class NMHDR extends AquaHotkey_Ignore {
-        hwndFrom: uptr
-        idFrom  : uptr
-        code    : i32
+        hwndFrom : uptr
+        idFrom   : uptr
+        code     : i32
     }
 
     class NMCUSTOMDRAW extends AquaHotkey_Ignore {
-        hdr        : Tanuki.NMHDR
-        dwDrawStage: u32
-        hdc        : uptr
-        rc         : Tanuki.RECT
-        dwItemSpec : uptr
-        uItemState : u32
-        lItemlParam: iptr
+        hdr         : Tanuki.NMHDR
+        dwDrawStage : u32
+        hdc         : uptr
+        rc          : Tanuki.RECT
+        dwItemSpec  : uptr
+        uItemState  : u32
+        lItemlParam : iptr
+    }
+
+    class HDITEM extends AquaHotkey_Ignore {
+        mask       : u32
+        cxy        : i32
+        pszText    : uptr
+        hbm        : uptr
+        cchTextMax : i32
+        fmt        : i32
+        lParam     : uPtr
+        iImage     : i32
+        iOrder     : i32
+        type       : u32
+        pvFilter   : uPtr
     }
 
 }
@@ -942,33 +1037,36 @@ class Catppuccin {
     }
 
     class MonthCal {
-        static TrailingText => "0x202020"
+        static Background   => "0x2E2E4E"
+        static TrailingText => "0x8fd398"
+        static Foreground   => "0xbcb287"
     }
 
     class Slider {
         ; TODO naming scheme of this
-        static Background => "0x662222"
+        static Background => "0x947373"
         static Foreground => "0x202020"
     }
 
     class ListView {
         static Background     => "0x1E1E2E"
-        static Foreground     => "0x880000"
         static TextBackground => "0x1E1E2E"
+        static Foreground     => "0xFFFFFF"
+
+        class Font {
+            static Size => 8
+        }
     }
 }
 
-g := Gui("Theme:Catppuccin")
-
-Btn := g.AddButton(unset, "Hello, world!")
-
+g        := Gui("Theme:Catppuccin")
+Btn      := g.AddButton(unset, "Hello, world!")
 DDLCtl   := g.AddDropDownList(unset, Array("this", "is", "a", "test"))
 Edt      := g.AddEdit("r1 w380")
 MonthCal := g.AddMonthCal()
 SldrCtl  := g.AddSlider("r1 w350", 50)
 RadioCtl := g.AddRadio(unset, "Click me?")
-LVCtl    := g.AddListView(unset, StrSplit("I hate ni -", A_Space))
+LVCtl    := g.AddListView(unset, StrSplit("Apple Banana Carrot Date Eggplant", A_Space))
 
 g.Show()
-
 
