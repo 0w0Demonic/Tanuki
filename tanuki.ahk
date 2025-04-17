@@ -121,14 +121,7 @@ class Tanuki extends AquaHotkey
             return Ctl
         }
 
-        /**
-         * Adds a checkbox control to the Gui.
-         * 
-         * @param   {String?}  Opt  additional options
-         * @param   {String?}  Txt  text to display in the checkbox
-         * @return  {Gui.CheckBox}
-         */
-        AddCheckBox(Opt?, Txt?) => this.Add("CheckBox", Opt?, Txt?)
+        #Include "%A_LineFile%/../CheckBox.ahk"
 
         /**
          * Adds a ComboBox control to the Gui.
@@ -407,19 +400,6 @@ class Tanuki extends AquaHotkey
             }
         }
 
-        /** Defines new properties and methods for `Gui.CheckBox` controls */
-        class CheckBox {
-            /**
-             * Applies a theme to the checkbox.
-             * 
-             * @param   {Object}  Theme  the theme to apply
-             * @return  {Object}
-             */
-            ApplyTheme(Theme) {
-                
-            }
-        }
-
         class ComboBox {
             ApplyTheme(Theme) {
 
@@ -432,45 +412,7 @@ class Tanuki extends AquaHotkey
             }
         }
 
-        /**
-         * 
-         */
-        AddDropDownList(Opt?, Items?) => this.Add("DropDownList", Opt?, Items?)
-
-        class DDL {
-            ApplyTheme(Theme) {
-                Theme := Tanuki.PrepareSubTheme(Theme, "DDL")
-                Tanuki.ApplyFont(this, Theme)
-
-                if (HasProp(Theme, "Background")) {
-                    this.Opt("Background" . Theme.Background)
-                }
-
-                if (HasProp(Theme, "DarkMode") && Theme.DarkMode) {
-                    DllCall("uxtheme\SetWindowTheme",
-                            "Ptr", this.Hwnd,
-                            "Str", "DarkMode_CFD",
-                            "Ptr", 0)
-                }
-
-                static WM_CTLCOLORLISTBOX := 0x0134
-                this.OnMessage(WM_CTLCOLORLISTBOX, RenderListBox, false)
-                this.OnMessage(WM_CTLCOLORLISTBOX, RenderListBox)
-                return Theme
-                
-                RenderListBox(LbCtl, wParam, lParam, Hwnd) {
-                    if (HasProp(Theme, "Font") && HasProp(Theme.Font, "Color"))
-                    {
-                        TextColor := Tanuki.Swap_RGB_BGR(Theme.Font.Color)
-                        DllCall("SetTextColor",
-                                "Ptr", wParam,
-                                "UInt", TextColor)
-                    }
-                    BackgroundColor := Tanuki.Swap_RGB_BGR(Theme.Background)
-                    return DllCall("CreateSolidBrush", "UInt", BackgroundColor)
-                }
-            }
-        }
+        #Include %A_LineFile%/../DDL.ahk
 
         /**
          * 
@@ -625,7 +567,6 @@ class Tanuki extends AquaHotkey
                 DllCall("SetDCBrushColor", "Ptr", hDC, "UInt", TextBackground)
                 DllCall("FillRect", "Ptr", hDC, Tanuki.RECT, nmcd.rc, "Ptr", DCBrush)
 
-                ; TODO make this rect smaller
                 NewRc := Tanuki.RECT()
                 DllCall("CopyRect", Tanuki.RECT, NewRc, Tanuki.RECT, Rc)
 
@@ -633,7 +574,7 @@ class Tanuki extends AquaHotkey
                 DllCall("SetTextColor", "Ptr", hDC, "Uint", Foreground)
 
                 DllCall("DrawText", "Ptr", hDC, "Ptr", StrPtr(ItemTxt),
-                        "Int", StrLen(ItemTxt), Tanuki.RECT, rc, "UInt", 0x0204)
+                        "Int", StrLen(ItemTxt), Tanuki.RECT, NewRc, "UInt", 0x0204)
                 
                 return CDRF_SKIPDEFAULT
             }
@@ -997,67 +938,7 @@ class Tanuki extends AquaHotkey
 
 }
 
-class Catppuccin {
-    static Background => "0x1E1E2E"
-    static Foreground => "0xE0E0E0"
-    static DarkMode   => true
-
-    class Button {
-        static Background => "0xa600ff"
-    }
-
-    class Edit {
-        static Background => "0x1E1E2E"
-        static DarkMode   => true
-
-        class Font {
-            static Color => "0xE0E0E0"
-        }
-    }
-
-    class Text {
-        static Background => "0x260a2e"
-
-        class Font {
-            static Color   => "0xbdd5a9"
-            static Name    => "Segoe UI"
-            static Size    => 10
-            static Format  => "bold italic"
-            static Quality => "Default"
-        }
-    }
-
-    class DDL {
-        static Background => "0x404040"
-        static DarkMode   => true
-
-        class Font {
-            static Color => "0xE0E0E0"
-        }
-    }
-
-    class MonthCal {
-        static Background   => "0x2E2E4E"
-        static TrailingText => "0x8fd398"
-        static Foreground   => "0xbcb287"
-    }
-
-    class Slider {
-        ; TODO naming scheme of this
-        static Background => "0x947373"
-        static Foreground => "0x202020"
-    }
-
-    class ListView {
-        static Background     => "0x1E1E2E"
-        static TextBackground => "0x1E1E2E"
-        static Foreground     => "0xFFFFFF"
-
-        class Font {
-            static Size => 8
-        }
-    }
-}
+#Include "%A_LineFiile%/../theme_catppuccin.ahk"
 
 g        := Gui("Theme:Catppuccin")
 Btn      := g.AddButton(unset, "Hello, world!")
