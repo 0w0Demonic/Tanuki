@@ -1,6 +1,7 @@
 #Requires AutoHotkey >=v2.0.5
-#Include <AquaHotkey>
-#DllLoad "uxtheme.dll"
+#DllLoad  "uxtheme.dll"
+#Include  <AquaHotkeyX>
+#Include  "%A_LineFile%/../theme_catppuccin.ahk"
 
 /**
  * Tanuki is an extension that allows the use of Gui themes for
@@ -105,6 +106,44 @@ class Tanuki extends AquaHotkey
             ApplyTheme(Theme) {
                 return
             }
+
+            /**
+             * Returns the character length of the control text.
+             * 
+             * @return  {Integer}
+             */
+            TextLength { ; TODO rename to `StrLen()`?
+                get {
+                    static WM_GETTEXTLENGTH := 0x000E
+                    return SendMessage(WM_GETTEXTLENGTH, 0, 0, this)
+                }
+            }
+
+            /**
+             * 
+             */
+            Style {
+                get {
+                    return ControlGetStyle(this)
+                }
+                set {
+                    ControlSetStyle(value, this)
+                }
+            }
+
+            /**
+             * 
+             */
+            ExStyle {
+                get {
+                    return ControlGetExStyle(this)
+                }
+                set {
+                    return ControlSetExStyle(value, this)
+                }
+            }
+
+            ; TODO a bunch of other common control messages
         }
 
         /**
@@ -121,6 +160,7 @@ class Tanuki extends AquaHotkey
             return Ctl
         }
 
+        #Include "%A_LineFile%/../Button.ahk"
         #Include "%A_LineFile%/../CheckBox.ahk"
 
         /**
@@ -362,43 +402,7 @@ class Tanuki extends AquaHotkey
             }
         }
 
-
-        /**
-         * Adds a new button to the Gui.
-         * 
-         * @param   {String?}  Opt  additional options
-         * @param   {String?}  Txt  the text to display
-         * @return  {Gui.Button}
-         */
-        AddButton(Opt?, Txt?) => this.Add("Button", Opt?, Txt?)
-
-        /** Defines new properties and methods for `Gui.Button` controls */
-        class Button {
-            /**
-             * Applies a theme to the button.
-             * 
-             * @param   {Object}  Theme  the theme to apply
-             * @return  {Object}
-             */
-            ApplyTheme(Theme) {
-                ; TODO background doesn't work
-                Theme := Tanuki.PrepareSubTheme(Theme, "Button")
-                Tanuki.ApplyFont(this, Theme)
-
-                if (HasProp(Theme, "DarkMode") && Theme.DarkMode) {
-                    DllCall("uxtheme\SetWindowTheme",
-                            "Ptr", this.Hwnd, 
-                            "Str", "DarkMode_Explorer",
-                            "Ptr", 0)
-                }
-
-                if (HasProp(Theme, "Background")) {
-                    this.Opt("Background" . Theme.Background)
-                }
-                
-                return Theme
-            }
-        }
+        #Include "%A_LineFile%/../Button.ahk"
 
         class ComboBox {
             ApplyTheme(Theme) {
@@ -413,30 +417,7 @@ class Tanuki extends AquaHotkey
         }
 
         #Include %A_LineFile%/../DDL.ahk
-
-        /**
-         * 
-         */
-        AddEdit(Opt?, Txt?) => this.Add("Edit", Opt?, Txt?)
-
-        /**
-         * 
-         */
-        class Edit {
-            ApplyTheme(Theme) {
-                Theme := Tanuki.PrepareSubTheme(Theme, "Edit")
-                Tanuki.ApplyFont(this, Theme)
-                if (HasProp(Theme, "DarkMode") && Theme.DarkMode) {
-                    DllCall("uxtheme\SetWindowTheme",
-                            "Ptr", this.Hwnd,
-                            "Str", "DarkMode_Explorer",
-                            "Ptr", 0)
-                }
-                if (HasProp(Theme, "Background")) {
-                    this.Opt("Background" . Theme.Background)
-                }
-            }
-        }
+        #Include %A_LineFile%/../Edit.ahk
 
         class GroupBox {
             ApplyTheme(Theme) {
@@ -564,6 +545,9 @@ class Tanuki extends AquaHotkey
 
                 VarSetStrCapacity(&ItemTxt, -1)
                 
+                DC := Gdi32.DeviceContext(hDC)
+
+
                 DllCall("SetDCBrushColor", "Ptr", hDC, "UInt", TextBackground)
                 DllCall("FillRect", "Ptr", hDC, Tanuki.RECT, nmcd.rc, "Ptr", DCBrush)
 
@@ -938,12 +922,232 @@ class Tanuki extends AquaHotkey
 
 }
 
-#Include "%A_LineFiile%/../theme_catppuccin.ahk"
+class RECT {
+    Left   : i32
+    Top    : i32
+    Right  : i32
+    Bottom : i32
+
+    __New(Left := 0, Top := 0, Right := 0, Bottom := 0) {
+        this.Left   := Left
+        this.Top    := Top
+        this.Right  := Right
+        this.Bottom := Bottom
+    }
+
+    Copy() {
+        Rc := RECT()
+        if (!DllCall("CopyRect", RECT, Rc, RECT, this)) {
+            throw Error("Unable to copy RECT")
+        }
+        return Rc
+    }
+
+    static CopyFrom(Rc) {
+        if (IsInteger(Rc)) {
+            Rc := StructFromPtr(RECT, Rc)
+        }
+        if (!(Rc is RECT)) {
+            throw TypeError("Expected a RECT",, Type(Rc))
+        }
+        ; TODO
+    }
+
+    TrimSystemBorder() {
+        static cx := SysGet(5)
+        static cy := SysGet(6)
+
+        this.Left   += cx
+        this.Right  -= cx
+        this.Top    += cy
+        this.Bottom -= cy
+        return this
+    }
+
+    static OfClient(Control) {
+        if (IsObject(Control)) {
+            Control := Control.Hwnd
+        }
+        if (!IsInteger(Control)) {
+            throw TypeError("Expected an Integer",, Type(Control))
+        }
+        Rc := RECT()
+        if (!DllCall("GetClientRect", "Ptr", Control, RECT, Rc)) {
+            throw OSError("Unable to retrieve client RECT")
+        }
+        return Rc
+    }
+
+    static OfWindow(Window) {
+        if (IsObject(Window)) {
+            Window := Window.Hwnd
+        }
+        if (!IsInteger(Window)) {
+            throw TypeError("Expected an Integer",, Type(Window))
+        }
+        Rc := RECT()
+        if (!DllCall("GetWindowRect", "Ptr", Window, RECT, Rc)) {
+            throw OSError("Unable to retrieve window RECT")
+        }
+        return Rc
+    }
+
+}
+
+class Gdi32 {
+    class DeviceContext {
+        ; TODO replace this with whatever is in `static Create()` ?
+        __New(hDC) {
+            if (!IsInteger(hDC)) {
+                throw TypeError("Expected an Integer",, Type(hDC))
+            }
+
+            this.DefineProp("Ptr", {
+                Get: (Instance) => hDC
+            })
+        }
+
+        static FromHandle(Handle) {
+            DC := Object()
+
+            if (!IsInteger(Handle)) {
+                throw TypeError("Expected an Integer",, Type(Handle))
+            }
+            ObjSetBase(DC, Gdi32.DeviceContext.Prototype)
+            DC.DefineProp("Ptr", {
+                Get: (Instance) => Handle
+            })
+            return DC
+        }
+
+        FillRect(Rc, Brush) {
+            ; TODO make Brush a new type?
+            DllCall("FillRect", "Ptr", this.Ptr, RECT, Rc, "Ptr", Brush)
+            return this
+        }
+
+        BrushColor {
+            set {
+                DllCall("SetDCBrushColor",
+                        "Ptr", this.Ptr,
+                        "UInt", Gdi32.Swap_RGB_BGR(value))
+            }
+        }
+
+        BackgroundMode {
+            set {
+                DllCall("SetBkMode", "Ptr", this.Ptr, "UInt", value)
+            }
+        }
+
+        BackgroundColor {
+            set {
+                DllCall("SetBkMode", "Ptr", this.Ptr, "UInt", Gdi32.Swap_RGB_BGR(value))
+            }
+        }
+
+        Cancel() {
+            DllCall("CancelDC", "Ptr", this.Ptr)
+        }
+
+        ; ChangeDisplaySettings
+        ; ChangeDisplaySettingsEx
+
+        CreateCompatibleDC() {
+            return DllCall("CreateCompatibleDC", "Ptr", this.Ptr)
+        }
+
+        static Create(Driver, Device, Port, DevMode) {
+
+        }
+
+        Delete() {
+
+        }
+
+        DrawEscape(Escape, Input) {
+
+        }
+    }
+
+    static DeleteObject(Obj) {
+
+    }
+
+    static SolidBrush(Color) {
+        return DllCall("CreateSolidBrush", "UInt", Gdi32.Swap_RGB_BGR(Color))
+    }
+
+    static Swap_RGB_BGR(Color) => ((Color & 0x00FF0000) >> 16)
+                                | ((Color & 0x0000FF00)      )
+                                | ((Color & 0x000000FF) << 16)
+
+    static DCBrush {
+        get {
+            static DC_BRUSH := 18
+            return DllCall("GetStockObject", "UInt", DC_BRUSH)
+        }
+    }
+
+    static InformationContext(Driver, Device, Port, DevMode) {
+
+    }
+
+    DeviceCapabilities(Device, Port, Capability, DevMode) {
+
+    }
+
+    class DisplayDevices {
+        __New() {
+
+        }
+        __Enum() {
+
+        }
+    }
+
+    class DisplaySettings {
+        __New() {
+
+        }
+        __Enum() {
+
+        }
+    }
+
+    class DisplaySettingsEx {
+        __New() {
+
+        }
+        __Enum() {
+
+        }
+    }
+
+
+}
+
+
+class NMHDR {
+    hwndFrom : uptr
+    idFrom   : uptr
+    code     : i32
+}
+
+class NMCUSTOMDRAW {
+    hdr         : NMHDR
+    dwDrawStage : u32
+    hdc         : uptr
+    rc          : RECT
+    dwItemSpec  : uptr
+    uItemState  : u32
+    lItemlParam : iptr
+}
 
 g        := Gui("Theme:Catppuccin")
 Btn      := g.AddButton(unset, "Hello, world!")
 DDLCtl   := g.AddDropDownList(unset, Array("this", "is", "a", "test"))
-Edt      := g.AddEdit("r1 w380")
+Edt      := g.AddEdit("r4 w380")
 MonthCal := g.AddMonthCal()
 SldrCtl  := g.AddSlider("r1 w350", 50)
 RadioCtl := g.AddRadio(unset, "Click me?")
@@ -951,3 +1155,16 @@ LVCtl    := g.AddListView(unset, StrSplit("Apple Banana Carrot Date Eggplant", A
 
 g.Show()
 
+Edt.BalloonTip.Show("Very cool title",
+                    "Very cool text",
+                    Gui.Edit.BalloonTip.Icon.WarningLarge)
+
+; ...
+
+
+^x:: {
+    
+}
+esc:: {
+    ExitApp()
+}
