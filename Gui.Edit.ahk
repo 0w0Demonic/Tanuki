@@ -29,79 +29,6 @@ class Edit {
     }
 
     /**
-     * Returns an object that is used for displaying balloon tips.
-     * 
-     * @return  {Gui.Edit.BalloonTip}
-     */
-    BalloonTip => Gui.Edit.BalloonTip(this)
-
-    /**
-     * A "balloon tip" is a notification that appears above the edit control,
-     * resembling a cartoon speech bubble.
-     */
-    class BalloonTip {
-        cbStruct : u32 := ObjGetDataSize(this)
-        pszTitle : uPtr
-        pszText  : uPtr
-        ttiIcon  : i32
-
-        /** Icons which are used inside of the balloon tip. */
-        static Icon => {
-            None:         0,
-            Info:         1,
-            Warning:      2,
-            Error:        3,
-            InfoLarge:    4,
-            WarningLarge: 5,
-            ErrorLarge:   6
-        }
-
-        /**
-         * Creates a new BalloonTip object which is associated with the
-         * given edit control.
-         * 
-         * @param   {Gui.Edit}  EditCtl  edit control that owns the balloon tip
-         * @return  {Gui.Edit.BalloonTip}
-         */
-        __New(EditCtl) {
-            if (!(EditCtl is Gui.Edit)) {
-                throw TypeError("Expected a Gui.Edit",, Type(EditCtl))
-            }
-            this.DefineProp("Hwnd", {
-                Get: (Instance) => EditCtl.Hwnd
-            })
-        }
-
-        /**
-         * Shows a balloon tip in the edit control.
-         * 
-         * @param   {String?}   Title  title of the balloon tip
-         * @param   {String?}   Text   the text to display
-         * @param   {Integer?}  Icon   a ToolTip icon (see `static Icon`)
-         */
-        Show(Title := "", Text := "", Icon := 0) {
-            static EM_SHOWBALLOONTIP := 0x1503
-
-            if (IsObject(Title) || IsObject(Text)) {
-                throw TypeError("Expected a String",,
-                                Type(Title) . " " . Type(Text))
-            }
-            if (!IsObject(Icon))
-            this.pszTitle := StrPtr(Title)
-            this.pszText  := StrPtr(Text)
-            this.ttiIcon  := Icon
-
-            SendMessage(EM_SHOWBALLOONTIP, 0, ObjGetDataPtr(this), this.Hwnd)
-        }
-
-        /** Hides the balloon tip. */
-        Hide() {
-            static EM_HIDEBALLOONTIP := 0x1504
-            SendMessage(EM_HIDEBALLOONTIP, 0, 0, this.Hwnd)
-        }
-    }
-
-    /**
      * Gets the currently selected text inside of the edit control.
      * 
      * @return  {String}
@@ -138,7 +65,8 @@ class Edit {
         }
 
         if ((Start == 0) || (Length == 0)) {
-            return this.Deselect()
+            SendMessage(EM_SETSEL, Start, Start, this)
+            return this
         }
 
         ; convert `Start` to 0-based starting index.
@@ -161,16 +89,26 @@ class Edit {
         return this
     }
 
-    /** Selects all the text inside of the edit control. */
+    /**
+     * Selects all the text inside of the edit control.
+     * 
+     * @return  {this}
+     */
     SelectAll() {
         static EM_SETSEL := 0x00B1
         SendMessage(EM_SETSEL, 0, -1, this)
+        return this
     }
 
-    /** Deselects any selected text in the edit control. */
+    /**
+     * Deselects any selected text in the edit control.
+     * 
+     * @return  {this}
+     */
     Deselect() {
         static EM_SETSEL := 0x00B1
         SendMessage(EM_SETSEL, -1, -1, this)
+        return this
     }
 
     /**
@@ -221,38 +159,27 @@ class Edit {
     }
 
     /**
-     * Returns the number of lines in the edit control.
-     * 
-     * @return  {Integer}
-     */
-    LineCount => EditGetLineCount(this)
-
-    /**
      * 
      */
     Scroll(UpDown := 0, LeftRight := 0) {
-        static EM_SCROLL := 0x00B5
-        static EM_LINESCROLL := 0x00BB
+        static EM_SCROLL     := 0x00B5
+        static EM_LINESCROLL := 0x00B6
 
-        static SB_LINEUP := 0x0000
+        static SB_LINEUP   := 0x0000
         static SB_LINEDOWN := 0x0001
-        static SB_PAGEUP := 0x0002
+        static SB_PAGEUP   := 0x0002
         static SB_PAGEDOWN := 0x0003
 
-        ; TODO
-        if (this.MultiLine) {
-            Direction := (UpDown > 0) ? SB_PAGEDOWN : SB_PAGEUP
-        }
-
+        SendMessage(EM_LINESCROLL, UpDown, LeftRight, this)
     }
 
     /**
      * 
      */
     ScrollLines(Count) {
-        static EM_SCROLL := 0x00B5
+        static EM_SCROLL   := 0x00B5
 
-        static SB_LINEUP := 0x0000
+        static SB_LINEUP   := 0x0000
         static SB_LINEDOWN := 0x0001
 
         if (!IsInteger(Count)) {
@@ -299,13 +226,21 @@ class Edit {
         return TotalLines
     }
 
-    ; TODO EM_LINESCROLL
-
+    /** Scrolls the caret into view in an edit control. */
     ScrollCaret() {
         static EM_SCROLLCARET := 0x00B7
         SendMessage(EM_SCROLLCARET, 0, 0, this)
+        return this
     }
 
+    /**
+     * Retrieves or sets the modification flag for the edit control. The
+     * modification flag indicates whether the text within the edit control
+     * has been modified.
+     * 
+     * @param   {Boolean}  value  the new value for the modification flag
+     * @return  {Boolean}
+     */
     WasModified {
         get {
             static EM_GETMODIFY := 0x00B8
@@ -313,46 +248,94 @@ class Edit {
         }
         set {
             static EM_SETMODIFY := 0x00B9
-            SendMessage(EM_SETMODIFY, !!value, 0, this)
+            SendMessage(EM_SETMODIFY, !!value, -1, this)
         }
     }
 
-    CurrentLine => EditGetCurrentLine(this)
+    /**
+     * Returns the number of lines in the edit control.
+     * 
+     * @return  {Integer}
+     */
+    LineCount => EditGetLineCount(this)
 
-    CurrentCol => EditGetCurrentCol(this)
-
-    Line[N := EditGetCurrentLine(this)] {
-        get => EditGetLine(N, this)
-        ; TODO { set; }
-    }
-
-    LineLength[N] => StrLen(EditGetLine(N, this))
-
+    /**
+     * Gets the character index of the first character of a specified line
+     * in a multiline edit control.
+     * 
+     * If parameter `Index` is omitted or `0`, the first character index of
+     * the current line is returned.
+     * 
+     * Similar to `SubStr()`, negative index start from the end of the string.
+     * 
+     * The return value is `0` whenever the specified line number is out
+     * of bounds.
+     * 
+     * @param   {Integer?}  Index  1-based line number
+     * @return  {Integer}
+     */
     LineIndex[Index := 0] {
         get {
             static EM_LINEINDEX := 0x00BB
             if (!IsInteger(Index)) {
                 throw TypeError("Expected an Integer",, Type(Index))
             }
-            return (SendMessage(EM_LINEINDEX, Index - 1, 0, this) + 1)
+            if (Index < 0) {
+                Index += this.LineCount
+            } else {
+                Index -= 1
+            }
+            return (SendMessage(EM_LINEINDEX, Index, 0, this) + 1) << 32 >> 32
         }
     }
 
-    Paste(Str) {
-        EditPaste(Str, this)
-    }
-
-    Limit {
-        ; TODO
+    /**
+     * Retrieves and sets the handle of the memory that will be used by a
+     * multiline edit control.
+     */
+    CharBuffer {
         get {
 
         }
         set {
-            if (!IsInteger(value)) {
-                throw TypeError("Expected an Integer",, Type(value))
-            }
-            this.Opt("Limit" . value)
+
         }
+    }
+
+    /**
+     * Gets the position of the scroll box (thumb) in the vertical scroll bar
+     * of a multiline edit control.
+     */
+    ScrollPosition {
+        get {
+            static EM_GETTHUMB := 0x00BE
+
+        }
+    }
+
+    /**
+     * 
+     */
+    LineLength[N] => StrLen(EditGetLine(N, this))
+
+    /**
+     * Pastes the specified string at the caret (text insertion point) in the
+     * edit control.
+     * 
+     * @param   {String}  Str  the string to insert
+     * @return  {this}
+     */
+    Paste(Str) {
+        EditPaste(Str, this)
+        return this
+    }
+
+    /**
+     * 
+     */
+    Line[N := EditGetCurrentLine(this)] {
+        get => EditGetLine(N, this)
+        ; TODO { set; }
     }
 
     CanUndo {
@@ -367,6 +350,12 @@ class Edit {
         return SendMessage(EM_UNDO, 0, 0, this)
     }
 
+    FormatLines {
+        set {
+
+        }
+    }
+
     ; TODO better name
     LineFromChar[Index := 0] {
         get {
@@ -376,11 +365,6 @@ class Edit {
             }
             return (SendMessage(EM_LINEFROMCHAR, Index - 1, 0, this) + 1)
         }
-    }
-
-    EmptyUndoBuffer() {
-        static EM_EMPTYUNDOBUFFER := 0x00CD
-        SendMessage(EM_EMPTYUNDOBUFFER, 0, 0, this)
     }
 
     ; TODO make this better
@@ -422,11 +406,24 @@ class Edit {
         }
     }
 
-    ; TODO check if the edit control is one-line
-    FirstVisibleCol {
-
+    EmptyUndoBuffer() {
+        static EM_EMPTYUNDOBUFFER := 0x00CD
+        SendMessage(EM_EMPTYUNDOBUFFER, 0, 0, this)
     }
 
+    /**
+     * 
+     */
+    CurrentLine => EditGetCurrentLine(this)
+
+    /**
+     * 
+     */
+    CurrentCol => EditGetCurrentCol(this)
+
+    /**
+     * 
+     */
     FirstVisibleLine {
         get {
             static EM_GETFIRSTVISIBLELINE := 0x00CE
@@ -434,6 +431,16 @@ class Edit {
         }
     }
 
+    ; TODO check if the edit control is one-line
+    FirstVisibleCol {
+        get {
+
+        }
+    }
+
+    /**
+     * 
+     */
     ReadOnly {
         ; TODO find out ES_READONLY
         get {
@@ -445,6 +452,9 @@ class Edit {
         }
     }
 
+    /**
+     * 
+     */
     WordBreakProcedure {
         get {
     
@@ -454,55 +464,158 @@ class Edit {
         }
     }
 
-    LeftMargin {
+    /**
+     * 
+     */
+    GetMargins() {
+        static EM_GETMARGINS := 0x00D4
+
+        Result := SendMessage(EM_GETMARGINS, 0, 0, this)
+        return {
+            Left:  (Result      ) & 0xFFFF,
+            Right: (Result >> 16) & 0xFFFF
+        }
+    }
+
+    /**
+     * 
+     */
+    SetMargins(Left?, Right?) {
+        static EM_SETMARGINS  := 0x00D3
+
+        static EC_LEFTMARGIN  := 0x0001
+        static EC_RIGHTMARGIN := 0x0002
+        static EC_USEFONT     := 0xFFFF
+
+        wParam := 0
+        lParam := 0
+        if (IsSet(Left)) {
+            wParam |= EC_LEFTMARGIN
+            lParam |= (Left & 0xFFFF)
+        }
+        if (IsSet(Right)) {
+            wParam |= EC_RIGHTMARGIN
+            lParam |= (Right & 0xFFFF) << 16
+        }
+
+        SendMessage(EM_SETMARGINS, wParam, lParam, this)
+    }
+
+    /**
+     * 
+     */
+    Limit {
+        ; TODO
         get {
 
         }
         set {
-
+            if (!IsInteger(value)) {
+                throw TypeError("Expected an Integer",, Type(value))
+            }
+            this.Opt("Limit" . value)
         }
     }
 
-    RightMargin {
-        get {
-
-        }
-        set {
-
-        }
-    }
-
-    PosFromChar() {
+    /**
+     * Retrieves the client area coordinates of a specified character in
+     * the edit control.
+     */
+    PosFromChar(Index) {
 
     }
 
-    CharFromPos() {
+    /**
+     * Gets information about the character closest to a specified point
+     * in the client area of an edit control.
+     */
+    CharFromPos(x, y) {
 
     }
 
+    /**
+     * 
+     */
     ImeStatus {
-
+        get {
+            static EM_GETIMESTATE          := 0x00D9
+            static EMSIS_COMPOSITIONSTRING := 0x0001
+        }
+        set {
+            static EM_SETIMESTATE          := 0x00D8
+            static EMSIS_COMPOSITIONSTRING := 0x0001
+        }
     }
 
-    static Style => {
-        Left:        0x0000,
-        Center:      0x0001,
-        Right:       0x0002,
-        MultiLine:   0x0004,
-        UpperCase:   0x0008,
-        LowerCase:   0x0010,
-        Password:    0x0021,
-        AutoVScroll: 0x0040,
-        AutoHScroll: 0x0080,
-        NoHideSel:   0x0100,
-        OEMConvert:  0x0400,
-        ReadOnly:    0x0800,
-        WantReturn:  0x1000,
-        Number:      0x2000
+    /**
+     * 
+     */
+    class ImeStatus {
+        static GetCompStratOnce         => 0x0001
+        static CancelCompStrInFocus     => 0x0002
+        static CompleteCompStrKillFocus => 0x0004
     }
+
+    /**
+     * 
+     */
+    class Alignment {
+        static Left   => 0x0000
+        static Center => 0x0001
+        static Right  => 0x0002
+    }
+
+    LeftAligned {
+        get {
+
+        }
+        set {
+
+        }
+    }
+
+    RightAligned {
+        get {
+
+        }
+        set {
+
+        }
+    }
+
+    CenterAligned {
+        get {
+
+        }
+        set {
+
+        }
+    }
+
+    /**
+     * 
+     */
+    class Style {
+        static Left        => 0x0000
+        static Center      => 0x0001
+        static Right       => 0x0002
+        static MultiLine   => 0x0004
+        static UpperCase   => 0x0008
+        static LowerCase   => 0x0010
+        static Password    => 0x0020
+        static AutoVScroll => 0x0040
+        static AutoHScroll => 0x0080
+        static NoHideSel   => 0x0100
+        static OEMConvert  => 0x0400
+        static ReadOnly    => 0x0800
+        static WantReturn  => 0x1000
+        static Number      => 0x2000
+    }
+
+    ; TODO LEFT
 
     MultiLine {
-        get => (ControlGetStyle(this) & Gui.Edit.Style.MultiLine)
+        get => !!(ControlGetStyle(this) & Gui.Edit.Style.MultiLine)
         set {
             (value) ? this.Style |=  Gui.Edit.Style.MultiLine
                     : this.Style &= ~Gui.Edit.Style.MultiLine
@@ -511,4 +624,78 @@ class Edit {
 
     ; TODO Styles
     ; TODO commctrl.h stuff like CueBanner...
+    
+    /**
+     * Returns an object that is used for displaying balloon tips.
+     * 
+     * @return  {Gui.Edit.BalloonTip}
+     */
+    BalloonTip => Gui.Edit.BalloonTip(this)
+
+    /**
+     * A "balloon tip" is a notification that appears above the edit control,
+     * resembling a cartoon speech bubble.
+     */
+    class BalloonTip {
+        cbStruct : u32 := ObjGetDataSize(this)
+        pszTitle : uPtr
+        pszText  : uPtr
+        ttiIcon  : i32
+
+        /** Icons which are used inside of the balloon tip. */
+        class Icon {
+            static None         => 0
+            static Info         => 1
+            static Warning      => 2
+            static Error        => 3
+            static InfoLarge    => 4
+            static WarningLarge => 5
+            static ErrorLarge   => 6
+        }
+
+        /**
+         * Creates a new BalloonTip object which is associated with the
+         * given edit control.
+         * 
+         * @param   {Gui.Edit}  EditCtl  edit control that owns the balloon tip
+         * @return  {Gui.Edit.BalloonTip}
+         */
+        __New(EditCtl) {
+            if (!(EditCtl is Gui.Edit)) {
+                throw TypeError("Expected a Gui.Edit",, Type(EditCtl))
+            }
+            this.DefineProp("Hwnd", {
+                Get: (Instance) => EditCtl.Hwnd
+            })
+        }
+
+        /**
+         * Shows a balloon tip in the edit control.
+         * 
+         * @param   {String?}   Title  title of the balloon tip
+         * @param   {String?}   Text   the text to display
+         * @param   {Integer?}  Icon   a ToolTip icon (see `static Icon`)
+         */
+        Show(Title := "", Text := "", Icon := Gui.Edit.BalloonTip.None) {
+            static EM_SHOWBALLOONTIP := 0x1503
+
+            if (IsObject(Title) || IsObject(Text)) {
+                throw TypeError("Expected a String",,
+                                Type(Title) . " " . Type(Text))
+            }
+            if (!IsObject(Icon))
+            this.pszTitle := StrPtr(Title)
+            this.pszText  := StrPtr(Text)
+            this.ttiIcon  := Icon
+
+            SendMessage(EM_SHOWBALLOONTIP, 0, ObjGetDataPtr(this), this.Hwnd)
+        }
+
+        /** Hides the balloon tip. */
+        Hide() {
+            static EM_HIDEBALLOONTIP := 0x1504
+            SendMessage(EM_HIDEBALLOONTIP, 0, 0, this.Hwnd)
+        }
+    }
+
 }
