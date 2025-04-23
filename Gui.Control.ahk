@@ -52,24 +52,16 @@ class Control {
      * 
      */
     Style {
-        get {
-            return ControlGetStyle(this)
-        }
-        set {
-            ControlSetStyle(value, this)
-        }
+        get => ControlGetStyle(this)
+        set => ControlSetStyle(value, this)
     }
 
     /**
      * 
      */
     ExStyle {
-        get {
-            return ControlGetExStyle(this)
-        }
-        set {
-            return ControlSetExStyle(value, this)
-        }
+        get => ControlGetExStyle(this)
+        set => ControlSetExStyle(value, this)
     }
 
     ; TODO a bunch of other common control messages

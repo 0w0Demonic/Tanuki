@@ -137,15 +137,6 @@ class Tanuki extends AquaHotkey
         AddLink(Opt?, Txt?) => this.Add("Link", Opt?, Txt?)
 
         /**
-         * Adds a calendar control to the Gui.
-         * 
-         * @param   {String?}  Opt   additional options
-         * @param   {String?}  Date  the range of dates available
-         * @return  {Gui.MonthCal}
-         */
-        AddMonthCal(Opt?, Date?) => this.Add("MonthCal", Opt?, Date?)
-
-        /**
          * 
          */
         AddPicture(Opt?, FileName?) => this.Add("Picture", Opt?, FileName?)
@@ -651,6 +642,17 @@ class NMCUSTOMDRAW {
     lItemlParam : iptr
 }
 
+class POINTL {
+    x : i32
+    y : i32
+
+    __New(x := 0, y := 0) {
+        this.x := x
+        this.y := y
+    }
+}
+
+
 g        := Gui("Theme:Catppuccin")
 Btn      := g.AddButton(unset, "Hello, world!")
 DDLCtl   := g.AddDropDownList(unset, Array("this", "is", "a", "test"))
@@ -664,18 +666,23 @@ LVCtl    := g.AddListView(unset, StrSplit("Apple Banana Carrot Date Eggplant", A
 
 g.Show()
 
-Edt.BalloonTip.Show("Very cool title",
-                    "Very cool text",
-                    Gui.Edit.BalloonTip.Icon.WarningLarge)
+Sleep(5000)
+Edt.BalloonTip.Show("Fucking shit!!!",
+                    "You ni-",
+                    Gui.Edit.BalloonTip.Icon.InfoLarge)
 
 ; ...
-Edt.Center := true
 
 ^x:: {
-    ToolTip(Edt.LineIndex)
+    Edt.SelectAll()
+    Edt.WebSearch.Enable()
+    Edt.WebSearch.Search()
+}
+
+^y:: {
+    
 }
 
 esc:: {
     ExitApp()
 }
-

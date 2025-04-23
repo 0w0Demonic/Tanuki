@@ -13,6 +13,7 @@ class Edit {
     /**
      * Applies a theme to the edit control.
      * @param   {Object}  Theme  the theme to apply
+     * @return  {Object}
      */
     ApplyTheme(Theme) {
         Theme := Tanuki.PrepareSubTheme(Theme, "Edit")
@@ -26,6 +27,7 @@ class Edit {
         if (HasProp(Theme, "Background")) {
             this.Opt("Background" . Theme.Background)
         }
+        return Theme
     }
 
     /**
@@ -64,7 +66,10 @@ class Edit {
             throw TypeError("Expected an Integer",, Type(Length))
         }
 
-        if ((Start == 0) || (Length == 0)) {
+        if (Start == 0) {
+            return this.Deselect()
+        }
+        if (Length == 0) {
             SendMessage(EM_SETSEL, Start, Start, this)
             return this
         }
@@ -158,6 +163,8 @@ class Edit {
         return this
     }
 
+    ; TODO Scrolling with LINESCROLL doesnt work
+
     /**
      * 
      */
@@ -177,6 +184,7 @@ class Edit {
      * 
      */
     ScrollLines(Count) {
+        ; TODO how do I summarize these?
         static EM_SCROLL   := 0x00B5
 
         static SB_LINEUP   := 0x0000
@@ -202,6 +210,7 @@ class Edit {
     }
 
     ScrollPages(Count) {
+        ; TODO how do I summarize these?
         static EM_SCROLL := 0x00B5
 
         static SB_PAGEUP := 0x0002
@@ -226,7 +235,11 @@ class Edit {
         return TotalLines
     }
 
-    /** Scrolls the caret into view in an edit control. */
+    /**
+     * Scrolls the caret into view of the edit control.
+     * 
+     * @return  {this}
+     */
     ScrollCaret() {
         static EM_SCROLLCARET := 0x00B7
         SendMessage(EM_SCROLLCARET, 0, 0, this)
@@ -257,7 +270,13 @@ class Edit {
      * 
      * @return  {Integer}
      */
-    LineCount => EditGetLineCount(this)
+    LineCount(Logical := false) {
+        static EM_GETLINECOUNT     := 0x00BA
+        static EM_GETFILELINECOUNT := 0x1517
+
+        return EditGetLineCount(this)
+        ; TODO
+    }
 
     /**
      * Gets the character index of the first character of a specified line
@@ -271,73 +290,80 @@ class Edit {
      * The return value is `0` whenever the specified line number is out
      * of bounds.
      * 
-     * @param   {Integer?}  Index  1-based line number
+     * If `Logical` is set to `true`, "soft line breaks" caused by text wrapping
+     * are not counted.
+     * 
+     * @param   {Integer?}  Index    1-based line number
+     * @param   {Boolean?}  Logical  ignore text wrapping
      * @return  {Integer}
      */
-    LineIndex[Index := 0] {
-        get {
-            static EM_LINEINDEX := 0x00BB
-            if (!IsInteger(Index)) {
-                throw TypeError("Expected an Integer",, Type(Index))
-            }
-            if (Index < 0) {
-                Index += this.LineCount
-            } else {
-                Index -= 1
-            }
-            return (SendMessage(EM_LINEINDEX, Index, 0, this) + 1) << 32 >> 32
+    LineIndex(Index := 0, Logical := false) {
+        static EM_LINEINDEX     := 0x00BB
+        static EM_FILELINEINDEX := 0x1514
+
+        if (!IsInteger(Index)) {
+            throw TypeError("Expected an Integer",, Type(Index))
         }
+        if (Index < 0) {
+            Index += this.LineCount
+        }
+        Msg := (Logical) ? EM_LINEINDEX
+                         : EM_FILELINEINDEX
+        return (SendMessage(Msg, Index, 0, this) + 1) << 32 >> 32
     }
 
     /**
-     * Retrieves and sets the handle of the memory that will be used by a
-     * multiline edit control.
-     */
-    CharBuffer {
-        get {
-
-        }
-        set {
-
-        }
-    }
-
-    /**
-     * Gets the position of the scroll box (thumb) in the vertical scroll bar
-     * of a multiline edit control.
-     */
-    ScrollPosition {
-        get {
-            static EM_GETTHUMB := 0x00BE
-
-        }
-    }
-
-    /**
+     * Retrieves the length in characters of a line in the edit control.
      * 
+     * If parameter `N` is omitted, the current line will be used.
+     * 
+     * If parameter `N` is set to `0`, the number of unselected characters
+     * on lines containing selected characters are returned.
+     * 
+     * - https://learn.microsoft.com/en-us/windows/win32/controls/em-linelength
+     * 
+     * If `Logical` is set to `true`, "soft line breaks" caused by text wrapping
+     * are not counted.
+     * 
+     * @param   {Integer?}  N        1-based line number
+     * @param   {Boolean?}  Logical  ignore text wrapping
+     * @return  {Integer}
      */
-    LineLength[N] => StrLen(EditGetLine(N, this))
+    LineLength(N := this.CurrentLine, Logical := false) {
+        static EM_LINELENGTH     := 0x00C1
+        static EM_FILELINELENGTH := 0x1515
+        
+        Msg := (Logical) ? EM_LINELENGTH
+                         : EM_FILELINELENGTH
+
+        return SendMessage(Msg, N - 1, 0, this)
+    }
 
     /**
      * Pastes the specified string at the caret (text insertion point) in the
      * edit control.
      * 
      * @param   {String}  Str  the string to insert
-     * @return  {this}
      */
-    Paste(Str) {
-        EditPaste(Str, this)
-        return this
+    Paste(Str) => EditPaste(Str, this)
+
+    /**
+     * Returns the text of the specified line in the edit control.
+     * 
+     * @param   {Integer}  1-based line number
+     * @return  {String}
+     */
+    Line(N := this.CurrentLine, Logical := false) {
+        return EditGetLine(N, this)
+        ; TODO
     }
 
     /**
+     * Determines whether there are any actions in the edit control's undo
+     * queue.
      * 
+     * @return  {Boolean}
      */
-    Line[N := EditGetCurrentLine(this)] {
-        get => EditGetLine(N, this)
-        ; TODO { set; }
-    }
-
     CanUndo {
         get {
             static EM_CANUNDO := 0x00C6
@@ -345,29 +371,50 @@ class Edit {
         }
     }
 
+    /**
+     * Undoes the last edit control operation.
+     * 
+     * @return  {Boolean}
+     */
     Undo() {
         static EM_UNDO := 0x00C7
         return SendMessage(EM_UNDO, 0, 0, this)
     }
 
-    FormatLines {
-        set {
+    /**
+     * Gets the index of the line that contains the specified character index
+     * in a multiline edit control. If `Index` is omitted or `0`, the current
+     * line is used, or if there is a selection, the line number of the line
+     * containing the beginning of the selection.
+     * 
+     * If the character index exceeds the length of the string, the last line
+     * number is returned.
+     * 
+     * If `Logical` is set to `true`, "soft line breaks" caused by text wrapping
+     * are ignored.
+     * 
+     * @param   {Integer?}  Index    1-based character index
+     * @param   {Boolean?}  Logical  ignore text wrapping
+     * @return  {Integer}
+     */
+    LineFromChar(Index := 0, Logical := true) {
+        static EM_LINEFROMCHAR     := 0x00C9
+        static EM_FILELINEFROMCHAR := 0x1513
 
+        if (!IsInteger(Index)) {
+            throw TypeError("Expeced an Integer",, Type(Index))
         }
+        Msg := (Logical) ? EM_LINEFROMCHAR
+                         : EM_FILELINEFROMCHAR
+        return (SendMessage(Msg, Index - 1, 0, this) + 1)
     }
 
-    ; TODO better name
-    LineFromChar[Index := 0] {
-        get {
-            static EM_LINEFROMCHAR := 0x00C9
-            if (!IsInteger(Index)) {
-                throw TypeError("Expected an Integer",, Type(Index))
-            }
-            return (SendMessage(EM_LINEFROMCHAR, Index - 1, 0, this) + 1)
-        }
-    }
-
-    ; TODO make this better
+    /**
+     * Sets the tab stops in a multiline edit control. Any tab character in the
+     * text causes space to be generated up to the next tab stop.
+     * 
+     * @param   {String/Array}  value  the new tab stops
+     */
     TabStops {
         set {
             if (!IsObject(value)) {
@@ -387,6 +434,12 @@ class Edit {
         }
     }
 
+    /**
+     * Gets and retrieves the character used for the password option.
+     * 
+     * @param   {String}  value  the new character to use (or empty string)
+     * @return  {String}
+     */
     PasswordChar {
         get {
             static EM_GETPASSWORDCHAR := 0x00D2
@@ -406,23 +459,35 @@ class Edit {
         }
     }
 
+    /**
+     * Resets the undo flag of the edit control, which is set whenever an
+     * operation within the edit control can be undone. 
+     */
     EmptyUndoBuffer() {
         static EM_EMPTYUNDOBUFFER := 0x00CD
         SendMessage(EM_EMPTYUNDOBUFFER, 0, 0, this)
     }
 
     /**
+     * Retrieves the 1-based line number of the current line.
      * 
+     * @return  {Integer}
      */
     CurrentLine => EditGetCurrentLine(this)
 
     /**
+     * Retrieves the 1-based index of the current column.
      * 
+     * @return  {Integer}
      */
     CurrentCol => EditGetCurrentCol(this)
 
     /**
+     * Gets the 1-based index of the uppermost visible line in a multiline edit
+     * control. For single-line edit controls, the return value is the 1-based
+     * index of the first visible character.
      * 
+     * @return  {Integer}
      */
     FirstVisibleLine {
         get {
@@ -431,21 +496,14 @@ class Edit {
         }
     }
 
-    ; TODO check if the edit control is one-line
-    FirstVisibleCol {
-        get {
-
-        }
-    }
-
     /**
+     * Sets or removes the read-only style of the edit control.
      * 
+     * @param   {Boolean}  value  whether to set or remove the style
+     * @return  {Boolean}
      */
     ReadOnly {
-        ; TODO find out ES_READONLY
-        get {
-            return ControlGetStyle(this)
-        }
+        get => !!(ControlGetStyle(this) | Gui.Edit.Style.ReadOnly)
         set {
             static EM_SETREADONLY := 0x00CF
             SendMessage(EM_SETREADONLY, !!value, 0, this)
@@ -453,19 +511,10 @@ class Edit {
     }
 
     /**
+     * Gets the widths of the left and right margins for an edit control, which
+     * are returned of an object with properties `Left` and `Right`.
      * 
-     */
-    WordBreakProcedure {
-        get {
-    
-        }
-        set {
-    
-        }
-    }
-
-    /**
-     * 
+     * @return  {Object}
      */
     GetMargins() {
         static EM_GETMARGINS := 0x00D4
@@ -478,7 +527,14 @@ class Edit {
     }
 
     /**
+     * Sets the widths of the left and right margins for an edit control.
+     * The control is redrawn to reflect the new margins.
      * 
+     * Using the special value `-1` in any of the two parameters causes that
+     * margin to be calculated using the text metrics of the current font.
+     * 
+     * @param   {Integer?}  Left   width of the left margin in pixels
+     * @param   {Integer?}  Right  width of the right margin in pixels
      */
     SetMargins(Left?, Right?) {
         static EM_SETMARGINS  := 0x00D3
@@ -490,10 +546,16 @@ class Edit {
         wParam := 0
         lParam := 0
         if (IsSet(Left)) {
+            if (Left == -1) {
+                Left := 0xFFFF
+            }
             wParam |= EC_LEFTMARGIN
             lParam |= (Left & 0xFFFF)
         }
         if (IsSet(Right)) {
+            if (Right == -1) {
+                Right := 0xFFFF
+            }
             wParam |= EC_RIGHTMARGIN
             lParam |= (Right & 0xFFFF) << 16
         }
@@ -502,12 +564,15 @@ class Edit {
     }
 
     /**
+     * Gets and sets the text limit for the edit control.
      * 
+     * @param   {Integer}  value  maximum amount of characters
+     * @return  {Integer}
      */
     Limit {
-        ; TODO
         get {
-
+            static EM_GETLIMITTEXT := 0x00D5
+            return SendMessage(EM_GETLIMITTEXT, 0, 0, this)
         }
         set {
             if (!IsInteger(value)) {
@@ -518,83 +583,48 @@ class Edit {
     }
 
     /**
-     * Retrieves the client area coordinates of a specified character in
-     * the edit control.
-     */
-    PosFromChar(Index) {
-
-    }
-
-    /**
-     * Gets information about the character closest to a specified point
-     * in the client area of an edit control.
-     */
-    CharFromPos(x, y) {
-
-    }
-
-    /**
+     * Returns an object that manages the text alignment of the edit control
      * 
+     * @return  {Gui.Edit.Align}
      */
-    ImeStatus {
-        get {
-            static EM_GETIMESTATE          := 0x00D9
-            static EMSIS_COMPOSITIONSTRING := 0x0001
+    Align => Gui.Edit.Align(this)
+
+    /** An object that manages the text alignment of the edit control. */
+    class Align {
+        /**
+         * Creates a new Edit.Align object.
+         * 
+         * @param   {Gui.Edit}  EditControl  the edit to be aligned
+         */
+        __New(EditControl) {
+            if (!(EditControl is Gui.Edit)) {
+                throw TypeError("Expected a Gui.Edit",, Type(EditControl))
+            }
+            this.DefineProp("Edit", {
+                Get: (Instance) => EditControl
+            })
         }
-        set {
-            static EM_SETIMESTATE          := 0x00D8
-            static EMSIS_COMPOSITIONSTRING := 0x0001
+
+        /** Aligns the text on the left. */
+        Left() {
+            this.Edit.Style &= ~0x0003
+            this.Edit.Style |= Gui.Edit.Style.Left
         }
-    }
 
-    /**
-     * 
-     */
-    class ImeStatus {
-        static GetCompStratOnce         => 0x0001
-        static CancelCompStrInFocus     => 0x0002
-        static CompleteCompStrKillFocus => 0x0004
-    }
-
-    /**
-     * 
-     */
-    class Alignment {
-        static Left   => 0x0000
-        static Center => 0x0001
-        static Right  => 0x0002
-    }
-
-    LeftAligned {
-        get {
-
+        /** Aligns the text on the right. */
+        Right() {
+            this.Edit.Style &= ~0x0003
+            this.Edit.Style |= Gui.Edit.Style.Right
         }
-        set {
 
-        }
-    }
-
-    RightAligned {
-        get {
-
-        }
-        set {
-
+        /** Aligns the text in the center. */
+        Center() {
+            this.Edit.Style &= ~0x0003
+            this.Edit.Style |= Gui.Edit.Style.Center
         }
     }
 
-    CenterAligned {
-        get {
-
-        }
-        set {
-
-        }
-    }
-
-    /**
-     * 
-     */
+    /** All edit control styles. */
     class Style {
         static Left        => 0x0000
         static Center      => 0x0001
@@ -612,8 +642,9 @@ class Edit {
         static Number      => 0x2000
     }
 
-    ; TODO LEFT
-
+    /**
+     * 
+     */
     MultiLine {
         get => !!(ControlGetStyle(this) & Gui.Edit.Style.MultiLine)
         set {
@@ -623,7 +654,24 @@ class Edit {
     }
 
     ; TODO Styles
-    ; TODO commctrl.h stuff like CueBanner...
+
+    /**
+     * Gets the text that is displayed as a textual core, or tip, in the edit
+     * control.
+     * 
+     * @param   {Integer?}  MaxCap  maximum string capacity of the cue
+     * @return  {String}
+     */
+    GetCue(MaxCap := 128) {
+        ; TODO can you use "GETTEXTLENGTH?"
+        static EM_GETCUEBANNERTEXT := 0x1501
+
+        MinCap := 64
+        Cap := VarSetStrCapacity(&Str, Max(MinCap, MaxCap))
+        SendMessage(EM_GETCUEBANNERTEXT, StrPtr(Str), Cap)
+        VarSetStrCapacity(&Str,-1) 
+        return Str
+    }
     
     /**
      * Returns an object that is used for displaying balloon tips.
@@ -664,8 +712,8 @@ class Edit {
             if (!(EditCtl is Gui.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditCtl))
             }
-            this.DefineProp("Hwnd", {
-                Get: (Instance) => EditCtl.Hwnd
+            this.DefineProp("Edit", {
+                Get: (Instance) => EditCtl
             })
         }
 
@@ -688,14 +736,207 @@ class Edit {
             this.pszText  := StrPtr(Text)
             this.ttiIcon  := Icon
 
-            SendMessage(EM_SHOWBALLOONTIP, 0, ObjGetDataPtr(this), this.Hwnd)
+            SendMessage(EM_SHOWBALLOONTIP, 0, ObjGetDataPtr(this), this.Edit)
         }
 
         /** Hides the balloon tip. */
         Hide() {
             static EM_HIDEBALLOONTIP := 0x1504
-            SendMessage(EM_HIDEBALLOONTIP, 0, 0, this.Hwnd)
+            SendMessage(EM_HIDEBALLOONTIP, 0, 0, this.Edit)
         }
     }
 
+    /**
+     * Allows and prevents a single-line edit control from receiving keyboard
+     * focus.
+     */
+    AllowFocus {
+        set {
+            static EM_NOSETFOCUS := 0x1507
+            static EM_TAKEFOCUS  := 0x1508
+
+            Msg := (value) ? EM_TAKEFOCUS
+                           : EM_NOSETFOCUS
+
+            SendMessage(Msg, 0, 0, this)
+        }
+    }
+
+    /** All extended edit control styles. */
+    class ExStyle {
+        static AllowCR        => 0x0001
+        static AllowLF        => 0x0002
+        static AllowAll       => 0x0003
+        static ConvertOnPaste => 0x0004
+        static Zoomable       => 0x0010
+    }
+
+    /** Retrieves and changes the new line character of the edit control. */
+    EndOfLine {
+        get {
+            static EM_GETENDOFLINE := 0x150D
+            ; TODO
+        }
+        set {
+            static EM_SETENDOFLINE := 0x150C
+            ; TODO
+        }
+    }
+
+    /** An enum of newline characters for use with the `EndOfLine` property. */
+    class EndOfLine {
+        static Auto => 0x0000
+        static CRLF => 0x0001
+        static CR   => 0x0002
+        static LF   => 0x0003
+    }
+
+    /**
+     * Returns an object that manages the "Search with Bing..." feature of the
+     * edit control.
+     * 
+     * @return   {Gui.Edit.WebSearch}
+     */
+    WebSearch => Gui.Edit.WebSearch(this)
+
+    /** An object that manages the "Search with Bing..." feature. */
+    class WebSearch {
+        /**
+         * Creates a new Edit.WebSearch object.
+         * 
+         * @param   {Gui.Edit}  EditControl  the edit control to manage
+         */
+        __New(EditControl) {
+            if (!(EditControl is Gui.Edit)) {
+                throw TypeError("Expected a Gui.Edit",, Type(EditControl))
+            }
+            this.DefineProp("Edit", {
+                Get: (Instance) => EditControl
+            })
+        }
+
+        /** Enables the "Search with Bing..." feature. */
+        Enable() {
+            static EM_ENABLESEARCHWEB := 0x150E
+            SendMessage(EM_ENABLESEARCHWEB, true, 0, this.Edit)
+        }
+
+        /** Disables the "Search with Bing..." feature. */
+        Disable() {
+            static EM_ENABLESEARCHWEB := 0x150E
+            SendMessage(EM_ENABLESEARCHWEB, false, 0, this.Edit)
+        }
+
+        /** Performs a search with Bing using the current selection. */
+        Search() {
+            static EM_SEARCHWEB := 0x150F
+            SendMessage(EM_SEARCHWEB, 0, 0, this.Edit)
+        }
+    }
+
+    /**
+     * Retrieves the index of the caret or moves it to the specified position.
+     * 
+     * @param   {Integer}  value  the new position to move caret to
+     * @return  {Integer}
+     */
+    CaretIndex {
+        get {
+            static EM_GETCARETINDEX := 0x1512
+            return (SendMessage(EM_GETCARETINDEX, 0, 0, this) + 1)
+        }
+        set {
+            static EM_SETCARETINDEX := 0x1511
+            return SendMessage(EM_SETCARETINDEX, value - 1, 0, this)
+        }
+    }
+
+    /**
+     * Returns an object that manages the zoom of the edit control.
+     * 
+     * @return  {Gui.Edit.Zoom}
+     */
+    Zoom => Gui.Edit.Zoom(this)
+
+    /** An object that manages zooming of the edit control. */
+    class Zoom {
+        /**
+         * Creates a new Gui.Edit.Zoom object.
+         * 
+         * @param   {Gui.Edit}  EditControl  the edit control to manage
+         */
+        __New(EditControl) {
+            if (!(EditControl is Gui.Edit)) {
+                throw TypeError("Expected a Gui.Edit",, Type(Edt))
+            }
+            this.DefineProp("Edit", {
+                Get: (Instance) => EditControl
+            })
+        }
+
+        /** Enables the zoom extended style of the edit control. */
+        Enable() {
+            this.Edit.ExStyle |= Gui.Edit.ExStyle.Zoomable
+        }
+
+        /** Disables the zoom extended style of the edit control. */
+        Disable() {
+            this.Edit.ExStyle &= Gui.Edit.ExStyle.Zoomable
+        }
+
+        /**
+         * Grows the text by the given percentage.
+         * 
+         * @param   {Integer?}  Percent  percentage to grow
+         */
+        In(Percent := 10) {
+            this.Set(this.Get() * (100 - Percent) / 100)
+        }
+
+        /**
+         * Shrinks the text by the given percentage.
+         * 
+         * @param   {Integer?}  Percent  percentage to shrink
+         */
+        Out(Percent := 10) {
+            this.Set(this.Get() * (100 + Percent) / 100)
+        }
+        
+        /**
+         * Gets the current size in the form of a float number.
+         * 
+         * @return  {Number}
+         */
+        Get() {
+            ; TODO doesnt work
+            static EM_GETZOOM := 0x0400 + 224
+
+            Numer := Buffer(A_PtrSize, 0)
+            Denom := Buffer(A_PtrSize, 0)
+            SendMessage(EM_GETZOOM, Numer.Ptr, Denom.Ptr, this.Edit)
+            Numer := NumGet(Numer, "UPtr")
+            Denom := NumGet(Denom, "UPtr")
+            return Numer / Denom
+        }
+        
+        /**
+         * Sets the scaling of the text to a certain size
+         */
+        Set(Ratio) {
+            ; TODO doesn't work
+            static EM_SETZOOM := 0x0400 + 225
+
+            Ratio := Round(Ratio, 4)
+            Numer := Integer(Ratio * 10000)
+            Denom := 10000
+            SendMessage(EM_SETZOOM, Numer, Denom, this.Edit)
+        }
+
+        /**
+         * Resets the scaling of the text to its original size (100%).
+         */
+        Reset() => this.Set(1)
+    }
+
+    ; TODO notif messages?
 }
