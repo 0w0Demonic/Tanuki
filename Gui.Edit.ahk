@@ -31,219 +31,336 @@ class Edit {
     }
 
     /**
-     * Gets the currently selected text inside of the edit control.
+     * Returns the character length of the current text.
      * 
-     * @return  {String}
+     * @return  {Integer}
      */
-    SelectedText => EditGetSelectedText(this)
+    TextLength {
+        get {
+            static WM_GETTEXTLENGTH := 0x000E
+            return SendMessage(WM_GETTEXTLENGTH, 0, 0, this)
+        }
+    }
 
     /**
-     * Selects a range of characters in the edit control.
-     * If the user uses the `SHIFT` key, the anchor point remains the same.
+     * Returns an object that wraps around the selection of an edit control.
      * 
-     * Parameters behave exactly as they would in built-in `SubStr()`.
-     * 
-     * To select all text inside the edit control, use `SelectAll()`.
-     * To deselect text, use `Deselect()`.
-     * 
-     * @param   {Integer}   Start   1-based index of the starting character
-     * @param   {Integer?}  Length  length of the selection (default 1)
-     * @return  {this}
+     * @return  {Gui.Edit.Selection}
      */
-    Select(Start, Length?) {
-        static EM_SETSEL := 0x00B1
+    Selection => Gui.Edit.Selection(this)
 
-        if (!IsInteger(Start)) {
-            throw TypeError("Expected an Integer",, Type(Start))
+    /** An object used for the selection of an edit control. */
+    class Selection {
+        /**
+         * Constructs a new Gui.Edit.Selection object.
+         * 
+         * @param   {Gui.Edit}  EditControl  the edit control to manage
+         */
+        __New(EditControl) {
+            if (!(EditControl is Gui.Edit)) {
+                throw TypeError("Expected a Gui.Edit",, Type(EditControl))
+            }
+            this.DefineProp("Edit", {
+                Get: (Instance) => EditControl
+            })
         }
-        TotalLength := this.TextLength
 
-        ; omitted `Length` --> until end of string (or length 0 + deselect)
-        if (!IsSet(Length)) {
-            Length := Max(0, TotalLength - Start + 1)
-        }
-        if (!IsInteger(Length)) {
-            throw TypeError("Expected an Integer",, Type(Length))
+        /**
+         * Returns the 1-based index of the first character in the selection.
+         * 
+         * @return  {Integer}
+         */
+        Start {
+            get {
+                Start := Buffer(A_PtrSize, 0)
+                SendMessage(EM_GETSEL := 0x00B0, Start.Ptr, 0, this.Edit)
+                return NumGet(Start, "UPtr") + 1
+            }
         }
 
-        if (Start == 0) {
-            return this.Deselect()
+        /**
+         * Returns the 1-based index of the last character in the selection.
+         * 
+         * @return  {Integer}
+         */
+        End {
+            get {
+                End := Buffer(A_PtrSize, 0)
+                SendMessage(EM_GETSEL := 0x00B0, 0, End.Ptr, this.Edit)
+                return NumGet(End, "UPtr")
+            }
         }
-        if (Length == 0) {
-            SendMessage(EM_SETSEL, Start, Start, this)
+
+        /**
+         * Selects a range of characters in the edit control.
+         * If the user uses the `SHIFT` key, the anchor point remains the same.
+         * 
+         * Parameters behave exactly as they would in built-in `SubStr()`.
+         * 
+         * To select all text inside the edit control, use `SelectAll()`.
+         * To deselect text, use `Deselect()`.
+         * 
+         * @param   {Integer}   Start   1-based index of the starting character
+         * @param   {Integer?}  Length  length of the selection (default 1)
+         * @return  {this}
+         */
+        Set(Start, Length?) {
+            static EM_SETSEL := 0x00B1
+
+            if (!IsInteger(Start)) {
+                throw TypeError("Expected an Integer",, Type(Start))
+            }
+            TotalLength := this.Edit.TextLength
+
+            ; omitted `Length` --> until end of string (or length 0 + deselect)
+            if (!IsSet(Length)) {
+                Length := Max(0, TotalLength - Start + 1)
+            }
+            if (!IsInteger(Length)) {
+                throw TypeError("Expected an Integer",, Type(Length))
+            }
+
+            if (Start == 0) {
+                return this.Clear()
+            }
+            if (Length == 0) {
+                SendMessage(EM_SETSEL, Start, Start, this.Edit)
+                return this
+            }
+
+            ; convert `Start` to 0-based starting index.
+            ; negative parameter --> last x characters
+            if (Start < 0) {
+                Start := Max(0, Start + TotalLength)
+            } else {
+                Start -= 1
+            }
+
+            ; convert `Length` to 0-based end index.
+            ; negative parameter --> omit x characters from end
+            if (Length < 0) {
+                Stop := Max(Start, TotalLength + Length)
+            } else {
+                Stop := Min(TotalLength, Start + Length)
+            }
+
+            SendMessage(EM_SETSEL, Start, Stop, this.Edit)
             return this
         }
 
-        ; convert `Start` to 0-based starting index.
-        ; negative parameter --> last x characters
-        if (Start < 0) {
-            Start := Max(0, Start + TotalLength)
-        } else {
-            Start -= 1
+        /** Deselects all text in the edit control. */
+        Clear() {
+            static EM_SETSEL := 0x00B1
+            SendMessage(EM_SETSEL, -1, -1, this)
+            return this
         }
 
-        ; convert `Length` to 0-based end index.
-        ; negative parameter --> omit x characters from end
-        if (Length < 0) {
-            Stop := Max(Start, TotalLength + Length)
-        } else {
-            Stop := Min(TotalLength, Start + Length)
+        /** Selects all text in the edit control. */
+        All() {
+            SendMessage(EM_SETSEL := 0x00B1, 0, -1, this)
         }
 
-        SendMessage(EM_SETSEL, Start, Stop, this)
-        return this
+        /**
+         * Returns the character length of the current selection.
+         * 
+         * @return  {Integer}
+         */
+        Length => this.End - this.Start
+
+        /**
+         * Returns the currently selected text.
+         * 
+         * @return  {String}
+         */
+        Text => EditGetSelectedText(this.Edit)
     }
 
     /**
-     * Selects all the text inside of the edit control.
+     * Returns an object that retrieves information about the caret and changes
+     * its position.
      * 
-     * @return  {this}
+     * @return  {Gui.Edit.Caret}
      */
-    SelectAll() {
-        static EM_SETSEL := 0x00B1
-        SendMessage(EM_SETSEL, 0, -1, this)
-        return this
-    }
+    Caret => Gui.Edit.Caret(this)
 
-    /**
-     * Deselects any selected text in the edit control.
-     * 
-     * @return  {this}
-     */
-    Deselect() {
-        static EM_SETSEL := 0x00B1
-        SendMessage(EM_SETSEL, -1, -1, this)
-        return this
-    }
-
-    /**
-     * Returns a `RECT` that contains the bounds of the text display area.
-     * This area defines where text is rendered within the edit control and
-     * can be modified using `.SetTextBounds()`.
-     * 
-     * @return  {RECT}
-     */
-    GetTextBounds() {
-        static EM_GETRECT := 0x00B2
-        Rc := RECT()
-        SendMessage(EM_GETRECT, 0, ObjGetDataPtr(Rc), this)
-        return Rc
-    }
-
-    /**
-     * Modifies the text `RECT` that contains the bounds the text display
-     * area.
-     * 
-     * @param   {RECT/Array/String}  Rc        the new RECT of the edit control
-     * @param   {Boolean?}           Relative  coords are relative to old RECT
-     * @param   {Boolean?}           Redraw    control is redrawn
-     * @return  {this}
-     */
-    SetTextBounds(Rc, Relative := false, Redraw := true) {
-        static EM_SETRECT   := 0x00B3
-        static EM_SETRECTNP := 0x00B4
-
-        if (!IsObject(Rc)) {
-            Rc := StrSplit(Rc, ",", A_Space)
-        }
-        if (Rc is Array) {
-            if (Rc.Length != 4) {
-                throw ValueError("Invalid number of RECT params",, Rc.Length)
+    /** A lightweight object to wrap around the caret of an edit control. */
+    class Caret {
+        __New(EditControl) {
+            if (!(EditControl is Gui.Edit)) {
+                throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            Rc := RECT(Rc*)
+            this.DefineProp("Edit", {
+                Get: (Instance) => EditControl
+            })
         }
-        if (!(Rc is RECT)) {
-            throw TypeError("Expected a RECT",, Type(Rc))
+
+        /**
+         * Moves the caret to the specified line number and column.
+         * 
+         * @param   {Integer?}  Line    the new line number
+         * @param   {Integer?}  Column  the new column
+         */
+        Move(Line := this.Line, Column := this.Column) {
+            Line   := Min(Max(1, Line), this.Edit.LineCount())
+            Index  := this.Edit.LineIndex(Line)
+            MaxLen := this.Edit.LineLength(Index)
+            NewCol := Min(Max(1, Column), MaxLen + 1)
+
+            this.Index := Index + NewCol - 1
         }
 
-        Msg := (Redraw) ? EM_SETRECT
-                        : EM_SETRECTNP
-
-        SendMessage(Msg, !!Relative, ObjGetDataPtr(Rc), this)
-        return this
-    }
-
-    ; TODO Scrolling with LINESCROLL doesnt work
-
-    /**
-     * 
-     */
-    Scroll(UpDown := 0, LeftRight := 0) {
-        static EM_SCROLL     := 0x00B5
-        static EM_LINESCROLL := 0x00B6
-
-        static SB_LINEUP   := 0x0000
-        static SB_LINEDOWN := 0x0001
-        static SB_PAGEUP   := 0x0002
-        static SB_PAGEDOWN := 0x0003
-
-        SendMessage(EM_LINESCROLL, UpDown, LeftRight, this)
-    }
-
-    /**
-     * 
-     */
-    ScrollLines(Count) {
-        ; TODO how do I summarize these?
-        static EM_SCROLL   := 0x00B5
-
-        static SB_LINEUP   := 0x0000
-        static SB_LINEDOWN := 0x0001
-
-        if (!IsInteger(Count)) {
-            throw TypeError("Expected an Integer", , Type(Count))
-        }
-        if (!Count) {
-            return 0
-        }
-        Direction := (Count > 0) ? SB_LINEDOWN : SB_LINEUP
-
-        TotalLines := 0
-        loop Abs(Count) {
-            Lines := SendMessage(EM_SCROLL, Direction, 0, this) & 0xFFFF
-            if (!Lines) {
-                break
+        /**
+         * Scrolls the text vertically and horizontally. If both parameters are
+         * omitted, scrolls the caret into view of the edit control.
+         * 
+         * - positive integer: down/right
+         * - negative integer: up/left
+         * 
+         * If both parameters are omitted, scrolls into view of the caret.
+         * 
+         * @param   {Integer?}  UpDown     lines to move up/down
+         * @param   {Integer?}  LeftRight  columns to scroll left/right
+         */
+        Scroll(UpDown := 0, LeftRight := 0) {
+            if (!IsInteger(UpDown) || !IsInteger(LeftRight)) {
+                throw TypeError("Expected an Integer",,
+                                Type(UpDown) . " " . Type(LeftRight))
             }
-            TotalLines += Lines
-        }
-        return TotalLines
-    }
 
-    ScrollPages(Count) {
-        ; TODO how do I summarize these?
-        static EM_SCROLL := 0x00B5
-
-        static SB_PAGEUP := 0x0002
-        static SB_PAGEDOWN := 0x0003
-
-        if (!IsInteger(Count)) {
-            throw TypeError("Expected an Integer", , Type(Count))
-        }
-        if (!Count) {
-            return
-        }
-        Direction := (Count > 0) ? SB_PAGEDOWN : SB_PAGEUP
-
-        TotalLines := 0
-        loop Abs(Count) {
-            Lines := SendMessage(EM_SCROLL, Direction, 0, this) & 0xFFFF
-            if (!Lines) {
-                break
+            if ((UpDown == 0) && (LeftRight == 0)) {
+                static EM_SCROLLCARET := 0x00B7
+                SendMessage(EM_SCROLLCARET, 0, 0, this.Edit)
             }
-            TotalLines += Lines
+
+            TotalLines := this.Edit.LineCount()
+            NewLineNum := Min(Max(1, this.Line + UpDown), TotalLines)
+
+            NewLineLen := this.Edit.LineLength(NewLineNum)
+            NewColNum  := Min(Max(1, this.Column + LeftRight), NewLineLen)
+
+            this.Index := this.Edit.LineIndex(NewLineNum) - 1 + NewColNum
         }
-        return TotalLines
+
+        /**
+         * Retrieves and changes the current line in the edit control.
+         * 
+         * @param   {Integer}  value  the new line
+         * @return  {Integer}
+         */
+        Line {
+            get => EditGetCurrentLine(this.Edit)
+            set {
+                if (!IsInteger(value)) {
+                    throw TypeError("Expected an Integer",, Type(value))
+                }
+                this.Move(value, this.Column)
+            }
+        }
+
+        /**
+         * Retrieves and changes the current column in the edit control.
+         * 
+         * @param   {Integer}  value  the new column
+         * @return  {Integer}
+         */
+        Column {
+            get {
+                return EditGetCurrentCol(this.Edit)
+            }
+            set {
+                if (!IsInteger(value)) {
+                    throw TypeError("Expected an Integer",, Type(value))
+                }
+                this.Move(this.Line, value)
+            }
+        }
+
+        /**
+         * Retrieves the index of the caret or moves it to the specified
+         * position.
+         * 
+         * @param   {Integer}  value  the new position to move caret to
+         * @return  {Integer}
+         */
+        Index {
+            get {
+                static EM_GETCARETINDEX := 0x1512
+                return (SendMessage(EM_GETCARETINDEX, 0, 0, this.Edit) + 1)
+            }
+            set {
+                static EM_SETCARETINDEX := 0x1511
+                return SendMessage(EM_SETCARETINDEX, value - 1, 0, this.Edit)
+            }
+        }
     }
 
     /**
-     * Scrolls the caret into view of the edit control.
+     * Returns an object that wraps around the text area of the edit control.
      * 
-     * @return  {this}
+     * @return  {Gui.Edit.TextArea}
      */
-    ScrollCaret() {
-        static EM_SCROLLCARET := 0x00B7
-        SendMessage(EM_SCROLLCARET, 0, 0, this)
-        return this
+    TextArea => Gui.Edit.TextArea(this)
+
+    /**
+     * 
+     */
+    class TextArea {
+        __New(EditControl) {
+            if (!(EditControl is Gui.Edit)) {
+                throw TypeError("Expected a Gui.Edit",, Type(EditControl))
+            }
+            this.DefineProp("Edit", {
+                Get: (Instance) => EditControl
+            })
+        }
+
+        /**
+         * Returns a `RECT` that contains the bounds of the text display area.
+         * This area defines where text is rendered within the edit control and
+         * can be modified using `.SetBounds(Rc, Absolute := false)`.
+         * 
+         * @return  {RECT}
+         */
+        GetBounds() {
+            static EM_GETRECT := 0x00B2
+            Rc := RECT()
+            SendMessage(EM_GETRECT, 0, ObjGetDataPtr(Rc), this.Edit)
+            return Rc
+        }
+
+        /**
+         * Modifies the text `RECT` that contains the bounds the text display
+         * area.
+         * 
+         * @param   {RECT/Array/String}  Rc        new RECT defining text bounds
+         * @param   {Boolean?}           Relative  change relative to old RECT
+         */
+        SetTextBounds(Rc, Relative := false) {
+            static EM_SETRECT   := 0x00B3
+
+            if (!IsObject(Rc)) {
+                Rc := StrSplit(Rc, ",", A_Space)
+            }
+            if (Rc is Array) {
+                if (Rc.Length != 4) {
+                    throw ValueError("Invalid number of params",, Rc.Length)
+                }
+                Rc := RECT(Rc*)
+            }
+            if (!(Rc is RECT)) {
+                throw TypeError("Expected a RECT",, Type(Rc))
+            }
+            if (Relative) {
+                OldRc := this.GetBounds()
+                Rc.Left   += OldRc.Left
+                Rc.Top    += OldRc.Top
+                Rc.Right  += OldRc.Right
+                Rc.Bottom += OldRc.Bottom
+            }
+
+            SendMessage(EM_SETRECT, !!Relative, ObjGetDataPtr(Rc), this.Edit)
+            return this
+        }
     }
 
     /**
@@ -268,48 +385,48 @@ class Edit {
     /**
      * Returns the number of lines in the edit control.
      * 
+     * If `Logical` is set to `true`, "soft line breaks" caused by text wrapping
+     * are ignored.
+     * 
+     * @param   {Boolean?}  Logical  ignore text wrapping
      * @return  {Integer}
      */
     LineCount(Logical := false) {
         static EM_GETLINECOUNT     := 0x00BA
         static EM_GETFILELINECOUNT := 0x1517
 
-        return EditGetLineCount(this)
-        ; TODO
+        Msg := (Logical) ? EM_GETFILELINECOUNT
+                         : EM_GETLINECOUNT
+
+        return SendMessage(Msg, 0, 0, this)
     }
 
     /**
      * Gets the character index of the first character of a specified line
      * in a multiline edit control.
      * 
-     * If parameter `Index` is omitted or `0`, the first character index of
-     * the current line is returned.
-     * 
-     * Similar to `SubStr()`, negative index start from the end of the string.
+     * If parameter `Index` is omitted, the current line is used.
      * 
      * The return value is `0` whenever the specified line number is out
      * of bounds.
      * 
      * If `Logical` is set to `true`, "soft line breaks" caused by text wrapping
-     * are not counted.
+     * are ignored.
      * 
      * @param   {Integer?}  Index    1-based line number
      * @param   {Boolean?}  Logical  ignore text wrapping
      * @return  {Integer}
      */
-    LineIndex(Index := 0, Logical := false) {
+    LineIndex(Index := EditGetCurrentLine(this), Logical := false) {
         static EM_LINEINDEX     := 0x00BB
         static EM_FILELINEINDEX := 0x1514
 
         if (!IsInteger(Index)) {
             throw TypeError("Expected an Integer",, Type(Index))
         }
-        if (Index < 0) {
-            Index += this.LineCount
-        }
-        Msg := (Logical) ? EM_LINEINDEX
-                         : EM_FILELINEINDEX
-        return (SendMessage(Msg, Index, 0, this) + 1) << 32 >> 32
+        Msg := (Logical) ? EM_FILELINEINDEX
+                         : EM_LINEINDEX
+        return (SendMessage(Msg, Index - 1, 0, this) + 1) << 32 >> 32
     }
 
     /**
@@ -323,18 +440,18 @@ class Edit {
      * - https://learn.microsoft.com/en-us/windows/win32/controls/em-linelength
      * 
      * If `Logical` is set to `true`, "soft line breaks" caused by text wrapping
-     * are not counted.
+     * are ignored.
      * 
      * @param   {Integer?}  N        1-based line number
      * @param   {Boolean?}  Logical  ignore text wrapping
      * @return  {Integer}
      */
-    LineLength(N := this.CurrentLine, Logical := false) {
+    LineLength(N := EditGetCurrentLine(this), Logical := false) {
         static EM_LINELENGTH     := 0x00C1
         static EM_FILELINELENGTH := 0x1515
         
-        Msg := (Logical) ? EM_LINELENGTH
-                         : EM_FILELINELENGTH
+        Msg := (Logical) ? EM_FILELINELENGTH
+                         : EM_LINELENGTH
 
         return SendMessage(Msg, N - 1, 0, this)
     }
@@ -348,14 +465,29 @@ class Edit {
     Paste(Str) => EditPaste(Str, this)
 
     /**
-     * Returns the text of the specified line in the edit control.
+     * Returns the text of the specified line in the edit control. If `N` is
+     * omitted, the current line will be returned.
      * 
-     * @param   {Integer}  1-based line number
+     * If `Logical` is set to `true`, "soft line breaks" caused by text wrapping
+     * are ignored.
+     * 
+     * @param   {Integer?}  N        1-based line number
+     * @param   {Boolean}   Logical  ignore text wrapping
      * @return  {String}
      */
-    Line(N := this.CurrentLine, Logical := false) {
-        return EditGetLine(N, this)
-        ; TODO
+    Line(N := EditGetCurrentLine(this), Logical := false) {
+        static EM_GETFILELINE := 0x1516
+        
+        if (!Logical) {
+            return EditGetLine(N, this)
+        }
+
+        Length := this.LineLength(N, true)
+        VarSetStrCapacity(&Result, Length)
+        SendMessage(EM_GETFILELINE, N - 1, StrPtr(Result), this)
+        VarSetStrCapacity(&Result, -1)
+
+        return Result
     }
 
     /**
@@ -383,9 +515,9 @@ class Edit {
 
     /**
      * Gets the index of the line that contains the specified character index
-     * in a multiline edit control. If `Index` is omitted or `0`, the current
-     * line is used, or if there is a selection, the line number of the line
-     * containing the beginning of the selection.
+     * in a multiline edit control.
+     * 
+     * If `Index` is omitted, the current line is used.
      * 
      * If the character index exceeds the length of the string, the last line
      * number is returned.
@@ -397,15 +529,16 @@ class Edit {
      * @param   {Boolean?}  Logical  ignore text wrapping
      * @return  {Integer}
      */
-    LineFromChar(Index := 0, Logical := true) {
+    LineFromChar(Index := EditGetCurrentLine(this), Logical := false) {
         static EM_LINEFROMCHAR     := 0x00C9
         static EM_FILELINEFROMCHAR := 0x1513
 
         if (!IsInteger(Index)) {
             throw TypeError("Expeced an Integer",, Type(Index))
         }
-        Msg := (Logical) ? EM_LINEFROMCHAR
-                         : EM_FILELINEFROMCHAR
+        Msg := (Logical) ? EM_FILELINEFROMCHAR
+                         : EM_LINEFROMCHAR
+
         return (SendMessage(Msg, Index - 1, 0, this) + 1)
     }
 
@@ -469,20 +602,6 @@ class Edit {
     }
 
     /**
-     * Retrieves the 1-based line number of the current line.
-     * 
-     * @return  {Integer}
-     */
-    CurrentLine => EditGetCurrentLine(this)
-
-    /**
-     * Retrieves the 1-based index of the current column.
-     * 
-     * @return  {Integer}
-     */
-    CurrentCol => EditGetCurrentCol(this)
-
-    /**
      * Gets the 1-based index of the uppermost visible line in a multiline edit
      * control. For single-line edit controls, the return value is the 1-based
      * index of the first visible character.
@@ -493,20 +612,6 @@ class Edit {
         get {
             static EM_GETFIRSTVISIBLELINE := 0x00CE
             return (SendMessage(EM_GETFIRSTVISIBLELINE, 0, 0, this) + 1)
-        }
-    }
-
-    /**
-     * Sets or removes the read-only style of the edit control.
-     * 
-     * @param   {Boolean}  value  whether to set or remove the style
-     * @return  {Boolean}
-     */
-    ReadOnly {
-        get => !!(ControlGetStyle(this) | Gui.Edit.Style.ReadOnly)
-        set {
-            static EM_SETREADONLY := 0x00CF
-            SendMessage(EM_SETREADONLY, !!value, 0, this)
         }
     }
 
@@ -582,6 +687,24 @@ class Edit {
         }
     }
 
+    /** All edit control styles. */
+    class Style {
+        static Left        => 0x0000
+        static Center      => 0x0001
+        static Right       => 0x0002
+        static MultiLine   => 0x0004
+        static UpperCase   => 0x0008
+        static LowerCase   => 0x0010
+        static Password    => 0x0020
+        static AutoVScroll => 0x0040
+        static AutoHScroll => 0x0080
+        static NoHideSel   => 0x0100
+        static OEMConvert  => 0x0400
+        static ReadOnly    => 0x0800
+        static WantReturn  => 0x1000
+        static Number      => 0x2000
+    }
+
     /**
      * Returns an object that manages the text alignment of the edit control
      * 
@@ -624,36 +747,33 @@ class Edit {
         }
     }
 
-    /** All edit control styles. */
-    class Style {
-        static Left        => 0x0000
-        static Center      => 0x0001
-        static Right       => 0x0002
-        static MultiLine   => 0x0004
-        static UpperCase   => 0x0008
-        static LowerCase   => 0x0010
-        static Password    => 0x0020
-        static AutoVScroll => 0x0040
-        static AutoHScroll => 0x0080
-        static NoHideSel   => 0x0100
-        static OEMConvert  => 0x0400
-        static ReadOnly    => 0x0800
-        static WantReturn  => 0x1000
-        static Number      => 0x2000
-    }
-
     /**
+     * Sets or removes the read-only style of the edit control.
      * 
+     * @param   {Boolean}  value  whether to set or remove the style
+     * @return  {Boolean}
      */
-    MultiLine {
-        get => !!(ControlGetStyle(this) & Gui.Edit.Style.MultiLine)
+    ReadOnly {
+        get => !!(ControlGetStyle(this) | Gui.Edit.Style.ReadOnly)
         set {
-            (value) ? this.Style |=  Gui.Edit.Style.MultiLine
-                    : this.Style &= ~Gui.Edit.Style.MultiLine
+            static EM_SETREADONLY := 0x00CF
+            SendMessage(EM_SETREADONLY, !!value, 0, this)
         }
     }
 
-    ; TODO Styles
+    /**
+     * Sets the removes the multi-line style of the edit control.
+     * 
+     * @param   {Boolean}  value  whether to set or remove the style
+     * @return  {Boolean}
+     */
+    MultiLine {
+        get => !!(ControlGetStyle(this) | Gui.Edit.Style.MultiLine)
+        set {
+            (value) ? (this.Style |=  Gui.Edit.Style.MultiLine)
+                    : (this.Style &= ~Gui.Edit.Style.MultiLine)
+        }
+    }
 
     /**
      * Gets the text that is displayed as a textual core, or tip, in the edit
@@ -663,14 +783,14 @@ class Edit {
      * @return  {String}
      */
     GetCue(MaxCap := 128) {
-        ; TODO can you use "GETTEXTLENGTH?"
-        static EM_GETCUEBANNERTEXT := 0x1501
+        static EM_GETCUEBANNERTEXT := 0x1502
+        static MinCap              := 64
 
-        MinCap := 64
-        Cap := VarSetStrCapacity(&Str, Max(MinCap, MaxCap))
-        SendMessage(EM_GETCUEBANNERTEXT, StrPtr(Str), Cap)
-        VarSetStrCapacity(&Str,-1) 
-        return Str
+        Buf := Buffer(Max(MinCap, MaxCap))
+        SendMessage(EM_GETCUEBANNERTEXT, Buf.Ptr, Buf.Size, this)
+        VarSetStrCapacity(&Str, -1) 
+
+        return StrGet(Buf, "UTF-16")
     }
     
     /**
@@ -705,26 +825,26 @@ class Edit {
          * Creates a new BalloonTip object which is associated with the
          * given edit control.
          * 
-         * @param   {Gui.Edit}  EditCtl  edit control that owns the balloon tip
+         * @param   {Gui.Edit}  EditControl  edit control to manage
          * @return  {Gui.Edit.BalloonTip}
          */
-        __New(EditCtl) {
-            if (!(EditCtl is Gui.Edit)) {
-                throw TypeError("Expected a Gui.Edit",, Type(EditCtl))
+        __New(EditControl) {
+            if (!(EditControl is Gui.Edit)) {
+                throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
             this.DefineProp("Edit", {
-                Get: (Instance) => EditCtl
+                Get: (Instance) => EditControl
             })
         }
 
         /**
          * Shows a balloon tip in the edit control.
          * 
-         * @param   {String?}   Title  title of the balloon tip
          * @param   {String?}   Text   the text to display
+         * @param   {String?}   Title  title of the balloon tip
          * @param   {Integer?}  Icon   a ToolTip icon (see `static Icon`)
          */
-        Show(Title := "", Text := "", Icon := Gui.Edit.BalloonTip.None) {
+        Show(Text := "", Title := "", Icon := Gui.Edit.BalloonTip.Icon.None) {
             static EM_SHOWBALLOONTIP := 0x1503
 
             if (IsObject(Title) || IsObject(Text)) {
@@ -754,11 +874,7 @@ class Edit {
         set {
             static EM_NOSETFOCUS := 0x1507
             static EM_TAKEFOCUS  := 0x1508
-
-            Msg := (value) ? EM_TAKEFOCUS
-                           : EM_NOSETFOCUS
-
-            SendMessage(Msg, 0, 0, this)
+            SendMessage((value) ? EM_TAKEFOCUS : EM_NOSETFOCUS, 0, 0, this)
         }
     }
 
@@ -775,11 +891,11 @@ class Edit {
     EndOfLine {
         get {
             static EM_GETENDOFLINE := 0x150D
-            ; TODO
+            return SendMessage(EM_GETENDOFLINE, 0, 0, this)
         }
         set {
             static EM_SETENDOFLINE := 0x150C
-            ; TODO
+            SendMessage(EM_SETENDOFLINE, value, 0, this)
         }
     }
 
@@ -833,110 +949,4 @@ class Edit {
             SendMessage(EM_SEARCHWEB, 0, 0, this.Edit)
         }
     }
-
-    /**
-     * Retrieves the index of the caret or moves it to the specified position.
-     * 
-     * @param   {Integer}  value  the new position to move caret to
-     * @return  {Integer}
-     */
-    CaretIndex {
-        get {
-            static EM_GETCARETINDEX := 0x1512
-            return (SendMessage(EM_GETCARETINDEX, 0, 0, this) + 1)
-        }
-        set {
-            static EM_SETCARETINDEX := 0x1511
-            return SendMessage(EM_SETCARETINDEX, value - 1, 0, this)
-        }
-    }
-
-    /**
-     * Returns an object that manages the zoom of the edit control.
-     * 
-     * @return  {Gui.Edit.Zoom}
-     */
-    Zoom => Gui.Edit.Zoom(this)
-
-    /** An object that manages zooming of the edit control. */
-    class Zoom {
-        /**
-         * Creates a new Gui.Edit.Zoom object.
-         * 
-         * @param   {Gui.Edit}  EditControl  the edit control to manage
-         */
-        __New(EditControl) {
-            if (!(EditControl is Gui.Edit)) {
-                throw TypeError("Expected a Gui.Edit",, Type(Edt))
-            }
-            this.DefineProp("Edit", {
-                Get: (Instance) => EditControl
-            })
-        }
-
-        /** Enables the zoom extended style of the edit control. */
-        Enable() {
-            this.Edit.ExStyle |= Gui.Edit.ExStyle.Zoomable
-        }
-
-        /** Disables the zoom extended style of the edit control. */
-        Disable() {
-            this.Edit.ExStyle &= Gui.Edit.ExStyle.Zoomable
-        }
-
-        /**
-         * Grows the text by the given percentage.
-         * 
-         * @param   {Integer?}  Percent  percentage to grow
-         */
-        In(Percent := 10) {
-            this.Set(this.Get() * (100 - Percent) / 100)
-        }
-
-        /**
-         * Shrinks the text by the given percentage.
-         * 
-         * @param   {Integer?}  Percent  percentage to shrink
-         */
-        Out(Percent := 10) {
-            this.Set(this.Get() * (100 + Percent) / 100)
-        }
-        
-        /**
-         * Gets the current size in the form of a float number.
-         * 
-         * @return  {Number}
-         */
-        Get() {
-            ; TODO doesnt work
-            static EM_GETZOOM := 0x0400 + 224
-
-            Numer := Buffer(A_PtrSize, 0)
-            Denom := Buffer(A_PtrSize, 0)
-            SendMessage(EM_GETZOOM, Numer.Ptr, Denom.Ptr, this.Edit)
-            Numer := NumGet(Numer, "UPtr")
-            Denom := NumGet(Denom, "UPtr")
-            return Numer / Denom
-        }
-        
-        /**
-         * Sets the scaling of the text to a certain size
-         */
-        Set(Ratio) {
-            ; TODO doesn't work
-            static EM_SETZOOM := 0x0400 + 225
-
-            Ratio := Round(Ratio, 4)
-            Numer := Integer(Ratio * 10000)
-            Denom := 10000
-            SendMessage(EM_SETZOOM, Numer, Denom, this.Edit)
-        }
-
-        /**
-         * Resets the scaling of the text to its original size (100%).
-         */
-        Reset() => this.Set(1)
-    }
-
-    ; TODO notif messages?
 }

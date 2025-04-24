@@ -652,12 +652,11 @@ class POINTL {
     }
 }
 
-
 g        := Gui("Theme:Catppuccin")
 Btn      := g.AddButton(unset, "Hello, world!")
 DDLCtl   := g.AddDropDownList(unset, Array("this", "is", "a", "test"))
 
-Edt      := g.AddEdit("r4 w380")
+Edt      := g.AddEdit("r10 w380")
 
 MonthCal := g.AddMonthCal()
 SldrCtl  := g.AddSlider("r4 w350", 50)
@@ -666,21 +665,10 @@ LVCtl    := g.AddListView(unset, StrSplit("Apple Banana Carrot Date Eggplant", A
 
 g.Show()
 
-Sleep(5000)
-Edt.BalloonTip.Show("Fucking shit!!!",
-                    "You ni-",
-                    Gui.Edit.BalloonTip.Icon.InfoLarge)
-
 ; ...
 
-^x:: {
-    Edt.SelectAll()
-    Edt.WebSearch.Enable()
-    Edt.WebSearch.Search()
-}
-
 ^y:: {
-    
+    MsgBox Edt.Zoom.Get()
 }
 
 esc:: {
