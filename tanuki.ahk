@@ -23,6 +23,7 @@ class Tanuki extends AquaHotkey
      * Defines new properties and methods added to the built-in `Gui` type.
      */
     class Gui {
+        #Include "%A_LineFile%/../Gui.Event.ahk"
         /**
          * Constructs a new Gui, optionally applying a theme given in the form
          * of a class name or file path to a JSON.
@@ -192,6 +193,7 @@ class Tanuki extends AquaHotkey
          * @param   {Object/String}  value  object, name of object or JSON file
          */
         Theme {
+            get => Catppuccin
             set {
                 Theme := Tanuki.LoadTheme(value)
 
@@ -642,6 +644,13 @@ class NMCUSTOMDRAW {
     lItemlParam : iptr
 }
 
+class NMSEARCHWEB {
+    hdr             : NMHDR
+    entrypoint      : i32
+    hasQueryText    : i32
+    invokeSucceeded : i32
+}
+
 class POINTL {
     x : i32
     y : i32
@@ -650,27 +659,4 @@ class POINTL {
         this.x := x
         this.y := y
     }
-}
-
-g        := Gui("Theme:Catppuccin")
-Btn      := g.AddButton(unset, "Hello, world!")
-DDLCtl   := g.AddDropDownList(unset, Array("this", "is", "a", "test"))
-
-Edt      := g.AddEdit("r10 w380")
-
-MonthCal := g.AddMonthCal()
-SldrCtl  := g.AddSlider("r4 w350", 50)
-RadioCtl := g.AddRadio(unset, "Click me?")
-LVCtl    := g.AddListView(unset, StrSplit("Apple Banana Carrot Date Eggplant", A_Space))
-
-g.Show()
-
-; ...
-
-^y:: {
-    MsgBox Edt.Zoom.Get()
-}
-
-esc:: {
-    ExitApp()
 }

@@ -34,3 +34,21 @@ class Button {
         return Theme
     }
 }
+
+; IdealSize { get; }
+; ImageList { get; set; }
+; TextMargin { get; set; }
+; OnHover(Callback)
+; DropDownPushed?
+
+; Style
+; SplitButtonInfo
+; SplitButtonStyle
+
+; ButtonSplitInfo
+
+; DropDownState { set; }
+; SplitInfo { get; set; }
+; Note { get; set; }
+; ElevationRequired { set; }
+; OnDropDown(Callback)

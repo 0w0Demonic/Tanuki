@@ -63,6 +63,4 @@ class Control {
         get => ControlGetExStyle(this)
         set => ControlSetExStyle(value, this)
     }
-
-    ; TODO a bunch of other common control messages
 }

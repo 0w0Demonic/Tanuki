@@ -27,19 +27,16 @@ class Edit {
         if (HasProp(Theme, "Background")) {
             this.Opt("Background" . Theme.Background)
         }
-        return Theme
-    }
 
-    /**
-     * Returns the character length of the current text.
-     * 
-     * @return  {Integer}
-     */
-    TextLength {
-        get {
-            static WM_GETTEXTLENGTH := 0x000E
-            return SendMessage(WM_GETTEXTLENGTH, 0, 0, this)
+        this.OnNotify(-12, Render, false)
+        this.OnNotify(-12, Render)
+
+        Render(EditControl, lParam) {
+            static Count := 0x0
+            ToolTip(++Count)
         }
+
+        return Theme
     }
 
     /**
@@ -176,6 +173,110 @@ class Edit {
     }
 
     /**
+     * Sent when the edit control receives the keyboard focus.
+     * 
+     * @example
+     * Edit_Focus(EditControl) {
+     * }
+     * 
+     * @param   {Func}      Callback   the function to call
+     * @param   {Integer?}  AddRemove  add or remove the function
+     * @return  {Gui.Event}
+     */
+    OnFocus(Callback, AddRemove?) {
+        static EN_SETFOCUS := 0x0100
+        return Gui.Event.OnCommand(this, EN_SETFOCUS, Callback, AddRemove?)
+    }
+
+    /**
+     * Sent when an edit control loses the keyboard focus.
+     * 
+     * @example
+     * Edit_FocusLost(EditControl) {
+     * }
+     * 
+     * @param   {Func}      Callback   the function to call
+     * @param   {Integer?}  AddRemove  add or remove the function
+     * @return  {Gui.Event}
+     */
+    OnFocusLost(Callback, AddRemove?) {
+        static EN_KILLFOCUS := 0x0200
+        return Gui.Event.OnCommand(this, EN_KILLFOCUS, Callback, AddRemove?)
+    }
+
+    /**
+     * Sent when the user has taken an action that may have altered text in
+     * the edit control.
+     * 
+     * @param   {Func}      Callback   the function to call
+     * @param   {Integer?}  AddRemove  add or remove the function
+     * @return  {Gui.Event}
+     */
+    OnChange(Callback, AddRemove?) {
+        static EN_CHANGE := 0x0300
+        return Gui.Event.OnCommand(this, EN_CHANGE, Callback, AddRemove?)
+    }
+
+    /**
+     * Sent when an edit control is about to redraw itself.
+     * 
+     * @param   {Func}      Callback   the function to call
+     * @param   {Integer?}  AddRemove  add or remove the function
+     * @return  {Gui.Event}
+     */
+    OnUpdate(Callback, AddRemove?) {
+        static EN_UPDATE := 0x0400
+        return Gui.Event.OnCommand(this, EN_UPDATE, Callback, AddRemove?)
+    }
+
+    /**
+     * Send when the edit control cannot allocate enough memory to meet a
+     * specific request.
+     * 
+     * @param   {Func}      Callback   the function to call
+     * @param   {Integer?}  AddRemove  add or remove the function
+     * @return  {Gui.Event}
+     */
+    OnOutOfMemory(Callback, AddRemove?) {
+        static EN_ERRSPACE := 0x0500
+        return Gui.Event.OnCommand(this, EN_ERRSPACE, Callback, AddRemove?)
+    }
+
+    /**
+     * Sent when the current text insertion has exceeded the specified number
+     * of characters for the edit control.
+     * 
+     * @param   {Func}      Callback   the function to call
+     * @param   {Integer?}  AddRemove  add or remove the function
+     * @return  {Gui.Event}
+     */
+    OnMaxText(Callback, AddRemove?) {
+        static EN_MAXTEXT := 0x0501
+        return Gui.Event.OnCommand(this, EN_MAXTEXT, Callback, AddRemove?)
+    }
+
+    /**
+     * Sent when the user clicks the horizonal scroll bar.
+     * 
+     * @param   {Func}      Callback   the function to call
+     * @param   {Integer?}  AddRemove  add or remove the function
+     * @return  {Gui.Event}
+     */
+    OnHScroll(Callback, AddRemove?) {
+        static EN_HSCROLL := 0x0601
+        return Gui.Event.OnCommand(this, EN_HSCROLL, Callback, AddRemove?)
+    }
+
+    /**
+     * Sent when the user clicks the vertical scroll bar or when the user
+     * scrolls the mouse wheel over the edit control.
+     */
+    OnVScroll(Callback, AddRemove?) {
+        static EN_VSCROLL := 0x0602
+        return Gui.Event.OnCommand(this, EN_VSCROLL, Callback, AddRemove?)
+    }
+
+    /**
      * Returns an object that retrieves information about the caret and changes
      * its position.
      * 
@@ -183,7 +284,7 @@ class Edit {
      */
     Caret => Gui.Edit.Caret(this)
 
-    /** A lightweight object to wrap around the caret of an edit control. */
+    /** An object that wraps around the caret of an edit control. */
     class Caret {
         __New(EditControl) {
             if (!(EditControl is Gui.Edit)) {
@@ -201,6 +302,11 @@ class Edit {
          * @param   {Integer?}  Column  the new column
          */
         Move(Line := this.Line, Column := this.Column) {
+            if (!IsInteger(Line) || !IsInteger(Column)) {
+                throw TypeError("Expected an Integer",,
+                                Type(Line) . " " . Type(Column))
+            }
+
             Line   := Min(Max(1, Line), this.Edit.LineCount())
             Index  := this.Edit.LineIndex(Line)
             MaxLen := this.Edit.LineLength(Index)
@@ -228,8 +334,7 @@ class Edit {
             }
 
             if ((UpDown == 0) && (LeftRight == 0)) {
-                static EM_SCROLLCARET := 0x00B7
-                SendMessage(EM_SCROLLCARET, 0, 0, this.Edit)
+                SendMessage(EM_SCROLLCARET := 0x00B7, 0, 0, this.Edit)
             }
 
             TotalLines := this.Edit.LineCount()
@@ -301,9 +406,7 @@ class Edit {
      */
     TextArea => Gui.Edit.TextArea(this)
 
-    /**
-     * 
-     */
+    /** An object that wraps around the text area of an edit control. */
     class TextArea {
         __New(EditControl) {
             if (!(EditControl is Gui.Edit)) {
@@ -335,7 +438,7 @@ class Edit {
          * @param   {RECT/Array/String}  Rc        new RECT defining text bounds
          * @param   {Boolean?}           Relative  change relative to old RECT
          */
-        SetTextBounds(Rc, Relative := false) {
+        SetBounds(Rc, Relative := false) {
             static EM_SETRECT   := 0x00B3
 
             if (!IsObject(Rc)) {
@@ -442,18 +545,21 @@ class Edit {
      * If `Logical` is set to `true`, "soft line breaks" caused by text wrapping
      * are ignored.
      * 
-     * @param   {Integer?}  N        1-based line number
+     * @param   {Integer?}  Index    1-based line number
      * @param   {Boolean?}  Logical  ignore text wrapping
      * @return  {Integer}
      */
-    LineLength(N := EditGetCurrentLine(this), Logical := false) {
+    LineLength(Index := EditGetCurrentLine(this), Logical := false) {
         static EM_LINELENGTH     := 0x00C1
         static EM_FILELINELENGTH := 0x1515
         
+        if (!IsInteger(Index)) {
+            throw TypeError("Expected an Integer",, Type(Index))
+        }
         Msg := (Logical) ? EM_FILELINELENGTH
                          : EM_LINELENGTH
 
-        return SendMessage(Msg, N - 1, 0, this)
+        return SendMessage(Msg, Index - 1, 0, this)
     }
 
     /**
@@ -471,20 +577,23 @@ class Edit {
      * If `Logical` is set to `true`, "soft line breaks" caused by text wrapping
      * are ignored.
      * 
-     * @param   {Integer?}  N        1-based line number
+     * @param   {Integer?}  Index    1-based line number
      * @param   {Boolean}   Logical  ignore text wrapping
      * @return  {String}
      */
-    Line(N := EditGetCurrentLine(this), Logical := false) {
+    Line(Index := EditGetCurrentLine(this), Logical := false) {
         static EM_GETFILELINE := 0x1516
         
+        if (!IsInteger(Index)) {
+            throw TypeError("Expected an Integer",, Type(Index))
+        }
         if (!Logical) {
-            return EditGetLine(N, this)
+            return EditGetLine(Index, this)
         }
 
-        Length := this.LineLength(N, true)
+        Length := this.LineLength(Index, true)
         VarSetStrCapacity(&Result, Length)
-        SendMessage(EM_GETFILELINE, N - 1, StrPtr(Result), this)
+        SendMessage(EM_GETFILELINE, Index - 1, StrPtr(Result), this)
         VarSetStrCapacity(&Result, -1)
 
         return Result
@@ -616,56 +725,87 @@ class Edit {
     }
 
     /**
-     * Gets the widths of the left and right margins for an edit control, which
-     * are returned of an object with properties `Left` and `Right`.
+     * Returns an object that controls the margins of an edit control.
      * 
-     * @return  {Object}
+     * @return  {Gui.Edit.TextMargin}
      */
-    GetMargins() {
-        static EM_GETMARGINS := 0x00D4
+    TextMargin => Gui.Edit.TextMargin(this)
 
-        Result := SendMessage(EM_GETMARGINS, 0, 0, this)
-        return {
-            Left:  (Result      ) & 0xFFFF,
-            Right: (Result >> 16) & 0xFFFF
-        }
-    }
-
-    /**
-     * Sets the widths of the left and right margins for an edit control.
-     * The control is redrawn to reflect the new margins.
-     * 
-     * Using the special value `-1` in any of the two parameters causes that
-     * margin to be calculated using the text metrics of the current font.
-     * 
-     * @param   {Integer?}  Left   width of the left margin in pixels
-     * @param   {Integer?}  Right  width of the right margin in pixels
-     */
-    SetMargins(Left?, Right?) {
-        static EM_SETMARGINS  := 0x00D3
-
-        static EC_LEFTMARGIN  := 0x0001
-        static EC_RIGHTMARGIN := 0x0002
-        static EC_USEFONT     := 0xFFFF
-
-        wParam := 0
-        lParam := 0
-        if (IsSet(Left)) {
-            if (Left == -1) {
-                Left := 0xFFFF
+    /** An object that controls the margins of an edit control. */
+    class TextMargin {
+        /**
+         * Constructs a new Gui.Edit.Margin object.
+         * 
+         * @param   {Gui.Edit}  EditControl  the edit control to manage
+         */
+        __New(EditControl) {
+            if (!(EditControl is Gui.Edit)) {
+                throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            wParam |= EC_LEFTMARGIN
-            lParam |= (Left & 0xFFFF)
-        }
-        if (IsSet(Right)) {
-            if (Right == -1) {
-                Right := 0xFFFF
-            }
-            wParam |= EC_RIGHTMARGIN
-            lParam |= (Right & 0xFFFF) << 16
+            this.DefineProp("Edit", {
+                Get: (Instance) => EditControl
+            })
         }
 
-        SendMessage(EM_SETMARGINS, wParam, lParam, this)
+        /**
+         * Retrieves and changes the left margin of the edit control.
+         * 
+         * @param   {Integer}  value  the new left margin in pixels
+         * @return  {Integer}
+         */
+        Left {
+            get {
+                static EM_GETMARGINS := 0x00D4
+                Result := SendMessage(EM_GETMARGINS, 0, 0, this.Edit)
+                return Result & 0xFFFF
+            }
+            set {
+                static EM_SETMARGINS := 0x00D3
+                static EM_LEFTMARGIN := 0x0001
+                static EC_USEFONT    := 0xFFFF
+
+                if (!IsInteger(value)) {
+                    throw TypeError("Expected an Integer",, Type(value))
+                }
+                wParam := EM_LEFTMARGIN
+                lParam := value
+                if (lParam == -1) {
+                    lParam := EC_USEFONT
+                }
+                lParam := Min(Max(lParam, 0), 0xFFFF)
+                SendMessage(EM_SETMARGINS, wParam, lParam, this.Edit)
+            }
+        }
+
+        /**
+         * Retrieves and changes the right margin of the edit control.
+         * 
+         * @param   {Integer}  value  the new right margin in pixels
+         * @return  {Integer}
+         */
+        Right {
+            get {
+                static EM_GETMARGINS := 0x00D4
+                Result := SendMessage(EM_GETMARGINS, 0, 0, this.Edit)
+                return (Result >> 16) & 0xFFFF
+            }
+            set {
+                static EM_SETMARGINS   := 0x00D3
+                static EM_RIGHTMARGIN  := 0x0002
+                static EC_USEFONT      := 0xFFFF
+
+                if (!IsInteger(value)) {
+                    throw TypeError("Expected an Integer",, Type(value))
+                }
+                wParam := EM_RIGHTMARGIN
+                lParam := value
+                if (lParam == -1) {
+                    lParam := EC_USEFONT
+                }
+                lParam := Min(Max(lParam, 0), 0xFFFF) << 16
+                SendMessage(EM_SETMARGINS, wParam, lParam, this.Edit)
+            }
+        }
     }
 
     /**
@@ -851,7 +991,6 @@ class Edit {
                 throw TypeError("Expected a String",,
                                 Type(Title) . " " . Type(Text))
             }
-            if (!IsObject(Icon))
             this.pszTitle := StrPtr(Title)
             this.pszText  := StrPtr(Text)
             this.ttiIcon  := Icon
@@ -887,7 +1026,17 @@ class Edit {
         static Zoomable       => 0x0010
     }
 
-    /** Retrieves and changes the new line character of the edit control. */
+    /**
+     * Retrieves and changes the new line character of the edit control.
+     * 
+     * - `0`: auto
+     * - `1`: `\r\n`
+     * - `2`: `\r`
+     * - `3`: `\n`
+     * 
+     * @param   {Integer}  value  the new EOL character
+     * @return  {Integer}
+     */
     EndOfLine {
         get {
             static EM_GETENDOFLINE := 0x150D
@@ -899,12 +1048,33 @@ class Edit {
         }
     }
 
-    /** An enum of newline characters for use with the `EndOfLine` property. */
-    class EndOfLine {
-        static Auto => 0x0000
-        static CRLF => 0x0001
-        static CR   => 0x0002
-        static LF   => 0x0003
+    /**
+     * Registers a function or method to be called when the user performs a
+     * "Search with Bing..." action.
+     * 
+     * - `FromContextMenu`: {boolean} event comes from the context menu
+     * - `HasQuery`:        {boolean} text was selected
+     * - `Success`:         {boolean} search was successful
+     * 
+     * @example
+     * 
+     * Callback(EditControl, EntryPoint, HasQuery, Success)
+     * 
+     * @param   {Callback}  Callback   the function to call
+     * @param   {Integer?}  AddRemove  add or remove the event
+     */
+    OnWebSearch(Callback, AddRemove?) {
+        static EN_SEARCHWEB := -1520
+        return Gui.Event.OnNotify(this, EN_SEARCHWEB,
+                                  WebSearch, AddRemove?)
+
+        WebSearch(EditControl, lParam) {
+            Notif := StructFromPtr(NMSEARCHWEB, lParam)
+            Callback(EditControl,
+                     Notif.EntryPoint,
+                     Notif.hasQueryText,
+                     Notif.InvokeSucceeded)
+        }
     }
 
     /**
@@ -914,6 +1084,17 @@ class Edit {
      * @return   {Gui.Edit.WebSearch}
      */
     WebSearch => Gui.Edit.WebSearch(this)
+
+    /**
+     * Performs a web search with Bing, using the current selection in the edit
+     * control (if any).
+     * 
+     * To activate this feature, using `.WebSearch.Enable()` first.
+     */
+    WebSearch() {
+        static EM_SEARCHWEB := 0x150F
+        SendMessage(EM_SEARCHWEB, 0, 0, this)
+    }
 
     /** An object that manages the "Search with Bing..." feature. */
     class WebSearch {
@@ -941,12 +1122,6 @@ class Edit {
         Disable() {
             static EM_ENABLESEARCHWEB := 0x150E
             SendMessage(EM_ENABLESEARCHWEB, false, 0, this.Edit)
-        }
-
-        /** Performs a search with Bing using the current selection. */
-        Search() {
-            static EM_SEARCHWEB := 0x150F
-            SendMessage(EM_SEARCHWEB, 0, 0, this.Edit)
         }
     }
 }

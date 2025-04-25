@@ -14,17 +14,17 @@ class Catppuccin {
 
         class Font {
             static Color => "0xb5c67c"
+            static Name  => "Cascadia Code"
         }
     }
 
     class Text {
-        static Background => "0x260a2e"
+        static Background => "0x251E2E"
 
         class Font {
             static Color   => "0xbba07a"
             static Name    => "Segoe UI"
             static Size    => 10
-            static Format  => "bold italic"
             static Quality => "Default"
         }
     }
