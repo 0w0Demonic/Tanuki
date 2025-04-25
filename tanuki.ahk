@@ -660,3 +660,12 @@ class POINTL {
         this.y := y
     }
 }
+
+class PAINTSTRUCT {
+    hdc         : uPtr
+    fErase      : i32
+    rcPaint     : RECT
+    fRestore    : i32
+    fIncUpdate  : i32
+    rgbReserved : 32
+}

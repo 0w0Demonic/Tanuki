@@ -71,4 +71,8 @@ class RECT {
         return Rc
     }
 
+    ToString() {
+        return Format("Left: {}, Top: {}, Right: {}, Bottom: {}",
+                      this.Left, this.Top, this.Right, this.Bottom)
+    }
 }

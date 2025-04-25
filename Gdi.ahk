@@ -6,6 +6,29 @@ class Gdi {
      * affect input.
      */
     class DeviceContext {
+        static BeginPaint(Hwnd, &PaintInfo?) {
+            if (IsObject(Hwnd)) {
+                Hwnd := Hwnd.Hwnd
+            }
+            if (!IsInteger(Hwnd)) {
+                throw TypeError("Expected an Object or an Integer",, Type(Hwnd))
+            }
+            PaintInfo := PAINTSTRUCT()
+            hDC := DllCall("BeginPaint", "Ptr", Hwnd, PAINTSTRUCT, PaintInfo)
+            return this.FromHandle(hDC)
+        }
+
+        static EndPaint(Hwnd, &PaintInfo?) {
+            if (IsObject(Hwnd)) {
+                Hwnd := Hwnd.Hwnd
+            }
+            if (!IsInteger(Hwnd)) {
+                throw TypeError("Expected an Object or an Integer",, Type(Hwnd))
+            }
+            DllCall("EndPaint", "Ptr", Hwnd, PAINTSTRUCT, PaintInfo)
+        }
+
+
         /**
          * Creates a device context from the given handle.
          * 

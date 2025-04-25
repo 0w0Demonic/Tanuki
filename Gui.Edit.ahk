@@ -28,12 +28,16 @@ class Edit {
             this.Opt("Background" . Theme.Background)
         }
 
-        this.OnNotify(-12, Render, false)
-        this.OnNotify(-12, Render)
+        ; TODO need to free this somehow when callback changes
+        static WM_PAINT := 0x000F
+        this.OnMessage(WM_PAINT, Paint)
 
-        Render(EditControl, lParam) {
-            static Count := 0x0
-            ToolTip(++Count)
+        Paint(EditControl, wParam, lParam, Hwnd) {
+            DC := Gdi.DeviceContext.BeginPaint(EditControl, &PaintInfo)
+            WindowRc := RECT.OfWindow(this)
+            ClientRc := PaintInfo.RcPaint
+            DC.FillRect(Rc, Gdi.SolidBrush(0xFF0000))
+            Gdi.DeviceContext.EndPaint(EditControl, &PaintInfo)
         }
 
         return Theme
