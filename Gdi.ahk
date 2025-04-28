@@ -41,7 +41,7 @@ class Gdi {
             if (!IsInteger(Handle)) {
                 throw TypeError("Expected an Integer",, Type(Handle))
             }
-            ObjSetBase(DC, Gdi.DeviceContext.Prototype)
+            ObjSetBase(DC, this.Prototype)
             DC.DefineProp("Ptr", {
                 Get: (Instance) => Handle
             })
@@ -95,6 +95,10 @@ class Gdi {
 
         DrawEscape(Escape, Input) {
 
+        }
+
+        Release(Hwnd) {
+            DllCall("ReleaseDC", "Ptr", Hwnd, "Ptr", this)
         }
     }
 

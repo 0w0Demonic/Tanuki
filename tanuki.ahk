@@ -90,6 +90,7 @@ class Tanuki extends AquaHotkey
         }
 
         #Include "%A_LineFile%/../Gui.Button.ahk"
+        #Include "%A_LineFile%/../Gui.CommandLink.ahk"
         #Include "%A_LineFile%/../Gui.CheckBox.ahk"
 
         /**

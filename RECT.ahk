@@ -13,6 +13,22 @@ class RECT {
         this.Right  := Right
         this.Bottom := Bottom
     }
+    
+    static Create(Rc) {
+        if (Rc is RECT) {
+            return Rc
+        }
+        if (!IsObject(Rc)) {
+            Rc := StrSplit(Rc, ",", A_Space)
+        }
+        if (Rc is Array) {
+            if (Rc.Length != 4) {
+                throw ValueError("Invalid number of params",, Rc.Length)
+            }
+            return RECT(Rc*)
+        }
+        throw TypeError("invalid type",, Type(Rc))
+    }
 
     Copy() {
         Rc := RECT()
@@ -40,6 +56,17 @@ class RECT {
         this.Right  -= cx
         this.Top    += cy
         this.Bottom -= cy
+        return this
+    }
+
+    GrowSystemBorder() {
+        static cx := SysGet(5)
+        static cy := SysGet(6)
+
+        this.Left   -= cx
+        this.Right  += cx
+        this.Top    -= cy
+        this.Bottom += cy
         return this
     }
 

@@ -28,18 +28,6 @@ class Edit {
             this.Opt("Background" . Theme.Background)
         }
 
-        ; TODO need to free this somehow when callback changes
-        static WM_PAINT := 0x000F
-        this.OnMessage(WM_PAINT, Paint)
-
-        Paint(EditControl, wParam, lParam, Hwnd) {
-            DC := Gdi.DeviceContext.BeginPaint(EditControl, &PaintInfo)
-            WindowRc := RECT.OfWindow(this)
-            ClientRc := PaintInfo.RcPaint
-            DC.FillRect(Rc, Gdi.SolidBrush(0xFF0000))
-            Gdi.DeviceContext.EndPaint(EditControl, &PaintInfo)
-        }
-
         return Theme
     }
 
@@ -445,18 +433,7 @@ class Edit {
         SetBounds(Rc, Relative := false) {
             static EM_SETRECT   := 0x00B3
 
-            if (!IsObject(Rc)) {
-                Rc := StrSplit(Rc, ",", A_Space)
-            }
-            if (Rc is Array) {
-                if (Rc.Length != 4) {
-                    throw ValueError("Invalid number of params",, Rc.Length)
-                }
-                Rc := RECT(Rc*)
-            }
-            if (!(Rc is RECT)) {
-                throw TypeError("Expected a RECT",, Type(Rc))
-            }
+            Rc := RECT.Create(Rc)
             if (Relative) {
                 OldRc := this.GetBounds()
                 Rc.Left   += OldRc.Left
