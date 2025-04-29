@@ -46,12 +46,10 @@ class Edit {
          * @param   {Gui.Edit}  EditControl  the edit control to manage
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit)) {
+            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", {
-                Get: (Instance) => EditControl
-            })
+            this.DefineProp("Edit", { Get: (Instance) => EditControl })
         }
 
         /**
@@ -278,13 +276,16 @@ class Edit {
 
     /** An object that wraps around the caret of an edit control. */
     class Caret {
+        /**
+         * Constructs a new `Gui.Edit.Caret` object.
+         * 
+         * @param   {Gui.Edit}  EditControl  the edit control to manage
+         */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit)) {
+            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", {
-                Get: (Instance) => EditControl
-            })
+            this.DefineProp("Edit", { Get: (Instance) => EditControl })
         }
 
         /**
@@ -400,13 +401,16 @@ class Edit {
 
     /** An object that wraps around the text area of an edit control. */
     class TextArea {
+        /**
+         * Constructs a new `Gui.Edit.TextArea` object.
+         * 
+         * @param   {Gui.Edit}  EditControl  the edit control to manage
+         */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit)) {
+            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", {
-                Get: (Instance) => EditControl
-            })
+            this.DefineProp("Edit", { Get: (Instance) => EditControl })
         }
 
         /**
@@ -720,12 +724,10 @@ class Edit {
          * @param   {Gui.Edit}  EditControl  the edit control to manage
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit)) {
+            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", {
-                Get: (Instance) => EditControl
-            })
+            this.DefineProp("Edit", { Get: (Instance) => EditControl })
         }
 
         /**
@@ -841,12 +843,10 @@ class Edit {
          * @param   {Gui.Edit}  EditControl  the edit to be aligned
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit)) {
+            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", {
-                Get: (Instance) => EditControl
-            })
+            this.DefineProp("Edit", { Get: (Instance) => EditControl })
         }
 
         /** Aligns the text on the left. */
@@ -904,14 +904,29 @@ class Edit {
      * @return  {String}
      */
     GetCue(MaxCap := 128) {
-        static EM_GETCUEBANNERTEXT := 0x1502
-        static MinCap              := 64
+        static EM_GETCUEBANNER := 0x1502
+        static MinCap          := 64
 
         Buf := Buffer(Max(MinCap, MaxCap))
-        SendMessage(EM_GETCUEBANNERTEXT, Buf.Ptr, Buf.Size, this)
+        SendMessage(EM_GETCUEBANNER, Buf.Ptr, Buf.Size, this)
         VarSetStrCapacity(&Str, -1) 
 
         return StrGet(Buf, "UTF-16")
+    }
+
+    /**
+     * Sets the text that is displayed as a textual core, or tip, in the edit
+     * control.
+     * 
+     * @param   {String?}   Str              the string to display
+     * @param   {Boolean?}  ShowWhenFocused  display while keyboard has focus
+     */
+    SetCue(Str, ShowWhenFocused := false) {
+        static EM_SETCUEBANNER := 0x1501
+        if (IsObject(Str)) {
+            throw TypeError("Expected a String",, Type(Str))
+        }
+        SendMessage(EM_SETCUEBANNER, !!ShowWhenFocused, StrPtr(Str), this)
     }
     
     /**
@@ -924,6 +939,8 @@ class Edit {
     /**
      * A "balloon tip" is a notification that appears above the edit control,
      * resembling a cartoon speech bubble.
+     * 
+     * TODO doesn't work externally
      */
     class BalloonTip {
         cbStruct : u32 := ObjGetDataSize(this)
@@ -950,12 +967,10 @@ class Edit {
          * @return  {Gui.Edit.BalloonTip}
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit)) {
+            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", {
-                Get: (Instance) => EditControl
-            })
+            this.DefineProp("Edit", { Get: (Instance) => EditControl })
         }
 
         /**
@@ -989,6 +1004,8 @@ class Edit {
     /**
      * Allows and prevents a single-line edit control from receiving keyboard
      * focus.
+     * 
+     * @param   {Boolean}  value  whether to allow focus
      */
     AllowFocus {
         set {
@@ -1066,17 +1083,6 @@ class Edit {
      */
     WebSearch => Gui.Edit.WebSearch(this)
 
-    /**
-     * Performs a web search with Bing, using the current selection in the edit
-     * control (if any).
-     * 
-     * To activate this feature, using `.WebSearch.Enable()` first.
-     */
-    WebSearch() {
-        static EM_SEARCHWEB := 0x150F
-        SendMessage(EM_SEARCHWEB, 0, 0, this)
-    }
-
     /** An object that manages the "Search with Bing..." feature. */
     class WebSearch {
         /**
@@ -1085,12 +1091,21 @@ class Edit {
          * @param   {Gui.Edit}  EditControl  the edit control to manage
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit)) {
+            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", {
-                Get: (Instance) => EditControl
-            })
+            this.DefineProp("Edit", { Get: (Instance) => EditControl })
+        }
+        
+        /**
+         * Performs a web search with Bing, using the current selection in the
+         * edit control (if any).
+         * 
+         * To activate this feature, using `.WebSearch.Enable()` first.
+         */
+        Call(*) {
+            static EM_SEARCHWEB := 0x150F
+            SendMessage(EM_SEARCHWEB, 0, 0, this.Edit)
         }
 
         /** Enables the "Search with Bing..." feature. */
