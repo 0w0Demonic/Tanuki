@@ -91,6 +91,7 @@ class Tanuki extends AquaHotkey
 
         #Include "%A_LineFile%/../Gui.Button.ahk"
         #Include "%A_LineFile%/../Gui.CommandLink.ahk"
+        #Include "%A_LineFile%/../Gui.SplitButton.ahk"
         #Include "%A_LineFile%/../Gui.CheckBox.ahk"
 
         /**
@@ -669,4 +670,17 @@ class PAINTSTRUCT {
     fRestore    : i32
     fIncUpdate  : i32
     rgbReserved : 32
+}
+
+class BUTTON_IMAGELIST {
+    himl   : uPtr
+    margin : RECT
+    uAlign : u32
+}
+
+class BUTTON_SPLITINFO {
+    mask        : u32
+    himlGlyph   : uPtr
+    uSplitStyle : u32
+    size        : SIZE
 }

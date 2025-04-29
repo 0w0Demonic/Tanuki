@@ -213,10 +213,18 @@ class Button {
 
     ImageList {
         get {
+            static BCM_GETIMAGELIST := 0x1603
+            BtnImageList := BUTTON_IMAGELIST()
 
+            SendMessage(BCM_GETIMAGELIST, 0, ObjGetDataPtr(BtnImageList), this)
+            return BtnImageList
         }
         set {
-
+            static BCM_SETIMAGELIST := 0x1602
+            if (!(value is BUTTON_IMAGELIST)) {
+                throw TypeError("Expected a BUTTON_IMAGELIST",, Type(value))
+            }
+            SendMessage(BCM_SETIMAGELIST, 0, ObjGetDataPtr(value), this)
         }
     }
 
@@ -244,21 +252,6 @@ class Button {
         
     }
 
-    class SplitButton {
-        class Style {
-            static NoSplit   => 0x0001
-            static Stretch   => 0x0002
-            static AlignLeft => 0x0004
-            static Image     => 0x0008
-        }
-        class Info {
-            static Glyph => 0x0001
-            static Image => 0x0002
-            static Style => 0x0004
-            static Size  => 0x0008
-        }
-    }
-
     DropDownState {
         set {
 
@@ -266,15 +259,6 @@ class Button {
     }
 
     SplitInfo {
-        get {
-
-        }
-        set {
-
-        }
-    }
-
-    Note {
         get {
 
         }
@@ -293,4 +277,23 @@ class Button {
     OnDropDown(Callback, AddRemove?) {
 
     }
+
+    Highlighted {
+        get {
+
+        }
+        set {
+
+        }
+    }
+
+    EnableInput {
+        set {
+
+        }
+    }
+
+    ; TODO DropDownState
+
+
 }

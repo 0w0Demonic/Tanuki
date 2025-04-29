@@ -60,7 +60,6 @@ class GuiProxy extends AquaHotkey_Backup {
     }
 }
 
-
 ^x:: {
     
 }
@@ -73,4 +72,3 @@ class SIZE {
     cx : i32
     cy : i32
 }
-

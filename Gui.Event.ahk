@@ -11,12 +11,10 @@ class Event {
         }
         GuiObj.OnMessage(MsgNumber, Callback, AddRemove?)
         EventObj := this()
-        EventObj.DefineProp("Remove", { Call: Remove })
+        EventObj.DefineProp("Remove", {
+            Call: (Instance) => Instance.OnMessage(MsgNumber, Callback, false)
+        })
         return EventObj
-
-        Remove(Instance) {
-            GuiObj.OnMessage(MsgNumber, Callback, false)
-        }
     }
 
     /**
@@ -28,11 +26,13 @@ class Event {
         }
         GuiObj.OnNotify(NotifyCode, Callback, AddRemove?)
         EventObj := this()
-        EventObj.DefineProp("Remove", { Call: Remove })
+        EventObj.DefineProp("Remove", {
+            Call: (Instance) => Instance.OnNotify(NotifyCode, Callback, false)
+        })
         return EventObj
 
         Remove(Instance) {
-            GuiObj.OnNotify(NotifyCode, Callback, false)
+            Instance.OnNotify(NotifyCode, Callback, false)
         }
     }
 
@@ -45,11 +45,9 @@ class Event {
         }
         GuiObj.OnCommand(NotifyCode, Callback, AddRemove?)
         EventObj := this()
-        EventObj.DefineProp("Remove", { Call: Remove })
+        EventObj.DefineProp("Remove", {
+            Call: (Instance) => Instance.OnCommand(NotifyCode, Callback, false)
+        })
         return EventObj
-
-        Remove(Instance) {
-            GuiObj.OnCommand(NotifyCode, Callback, false)
-        }
     }
 }
