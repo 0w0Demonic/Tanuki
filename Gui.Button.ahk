@@ -36,6 +36,7 @@ class Button {
 
     /** All button styles. */
     class Style {
+        ; TODO remove unrelated button constants?
         static PushButton         => 0x0000
         static DefaultPushButton  => 0x0001
         static CheckBox           => 0x0002
@@ -52,8 +53,7 @@ class Button {
         static DefaultSplitButton => 0x000D
         static CommandLink        => 0x000E
         static DefaultCommandLink => 0x000F
-
-        static TypeMask    => 0x000F
+        static TypeMask           => 0x000F
         
         static LeftText    => 0x0020
         static RightButton => 0x0020
@@ -104,16 +104,6 @@ class Button {
         return Gui.Event.OnCommand(this, BN_PAINT, Callback, AddRemove?)
     }
 
-    OnHighlight(Callback, AddRemove?) {
-        static BN_HILITE := 0x0002
-        return Gui.Event.OnCommand(this, BN_HILITE, Callback, AddRemove?)
-    }
-
-    OnHighlightLost(Callback, AddRemove?) {
-        static BN_UNHILITE := 0x0003
-        return Gui.Event.OnCommand(this, BN_UNHILITE, Callback, AddRemove?)
-    }
-
     /**
      * Sent when the button is diabled.
      * 
@@ -158,7 +148,7 @@ class Button {
      * @return  {Gui.Event}
      */
     OnFocus(Callback, AddRemove?) {
-        ; TODO need to add BS_NOTIFY?
+        try this.Style |= Gui.Button.Style.Notify
         static BN_SETFOCUS := 0x0006
         return Gui.Event.OnCommand(this, BN_SETFOCUS, Callback, AddRemove?)
     }
@@ -175,33 +165,46 @@ class Button {
      * @return  {Gui.Event}
      */
     OnFocusLost(Callback, AddRemove?) {
-        ; TODO need to add BS_NOTIFY?
+        try this.Style |= Gui.Button.Style.Notify
         static BN_KILLFOCUS := 0x0007
         return Gui.Event.OnCommand(this, BN_KILLFOCUS, Callback, AddRemove?)
     }
 
-    SetButtonStyle(Style, Redraw := true) {
-        ; TODO check for integer
-        static BM_SETSTYLE := 0x00F4
-        SendMessage(BM_SETSTYLE, Style, !!Redraw, this)
-    }
-
+    /**
+     * Simulates the user clicking the button.
+     */
     Click() {
         static BM_CLICK := 0x00F5
         SendMessage(BM_CLICK, 0, 0, this)
     }
 
-    ; TODO wrap this in BITMAP
-    GetImage(Type) {
+    ; TODO wrap this in BITMAP and ICON
+    ; TODO how do I remove that "Type" parameter?
+    /**
+     * Retrieves the handle to the image (icon or bitmap) associated with
+     * the button.
+     * 
+     * @param   {Boolean}  IsIcon  the type of image (`0` - bitmap, `1` - icon)
+     * @return  {Gdi.Bitmap/Gdi.Icon}
+     */
+    GetImage(IsIcon) {
         static BM_GETIMAGE := 0x00F6
-        return SendMessage(BM_GETIMAGE, Type, 0, this)
+        return SendMessage(BM_GETIMAGE, !!IsIcon, 0, this)
     }
 
-    SetImage(Type, Obj) {
+    /**
+     * 
+     */
+    SetImage(Obj, IsIcon) {
         static BM_SETIMAGE := 0x00F7
-        return SendMessage(BM_SETIMAGE, Type, Obj, this)
+        return SendMessage(BM_SETIMAGE, !!IsIcon, Obj, this)
     }
 
+    /**
+     * Gets the size that best fits the text and image of the button control.
+     * 
+     * @return  {SIZE}
+     */
     IdealSize {
         get {
             static BCM_GETIDEALSIZE := 0x1601
@@ -211,6 +214,9 @@ class Button {
         }
     }
 
+    /**
+     * 
+     */
     ImageList {
         get {
             static BCM_GETIMAGELIST := 0x1603
@@ -228,6 +234,8 @@ class Button {
         }
     }
 
+    ; TODO just do TextMargin { get; set; } ?
+
     GetTextMargin() {
         static BCM_GETTEXTMARGIN := 0x1605
         Rc := RECT()
@@ -240,6 +248,7 @@ class Button {
         Rc := RECT.Create(Rc)
         if (Relative) {
             OldRc := this.GetTextMargin()
+            ; TODO add RECT.add(Other)?
             Rc.Left   += OldRc.Left
             Rc.Top    += OldRc.Top
             Rc.Right  += OldRc.Right
@@ -248,52 +257,97 @@ class Button {
         SendMessage(BCM_SETTEXTMARGIN, 0, ObjGetDataPtr(Rc), this)
     }
 
+    /**
+     * Sent when the mouse is entering or leaving the client area of the button
+     * control.
+     * 
+     * @example
+     * MyButton_OnHover(ButtonControl, Info) {
+     *     if (Info.Entering) {
+     *         ToolTip("entering area...")
+     *     } else {
+     *         ToolTip("leaving area...")
+     *     }
+     * }
+     * 
+     * @param   {Func}      Callback   the function to call
+     * @param   {Integer?}  AddRemove  add or remove the function
+     * @return  {Gui.Event}
+     */
     OnHover(Callback, AddRemove?) {
-        
-    }
+        static BTN_HOTITEMCHANGE := -1249
+        return Gui.Event.OnNotify(this, BTN_HOTITEMCHANGE, Hover, AddRemove?)
 
-    DropDownState {
-        set {
-
+        Hover(ButtonControl, lParam) {
+            HotItemStruct := StructFromPtr(NMBCHOTITEM, lParam)
+            Callback(ButtonControl, HotItemStruct.dwFlags)
         }
     }
 
-    SplitInfo {
-        get {
-
-        }
-        set {
-
-        }
-    }
-
-    ElevationRequired {
+    /**
+     * Sets the elevation required state for the button to display an elevated
+     * icon (a shield).
+     * 
+     * @param   {Boolean}  value  activate to draw elevated icon
+     */
+    RequireAdmin {
         set {
             static BCM_SETSHIELD := 0x160C
             SendMessage(BCM_SETSHIELD, 0, !!value, this)
         }
     }
 
-    OnDropDown(Callback, AddRemove?) {
-
+    /**
+     * Sets the highlight state of the button. Highlighting affects only
+     * the appearance of the button.
+     * 
+     * @param   {Boolean}  value  wether the button is highlighted.
+     */
+    IsHighlighted {
+        set {
+            static BM_SETSTATE := 0x00F3
+            SendMessage(BM_SETSTATE, !!value, 0, this)
+        }
     }
 
-    Highlighted {
+    /**
+     * Retrieves the state of the button.
+     * 
+     * @return  {Gui.Button.State}
+     */
+    State {
         get {
-
-        }
-        set {
-
-        }
-    }
-
-    EnableInput {
-        set {
-
+            static BM_GETSTATE := 0x00F2
+            Result := SendMessage(BM_GETSTATE, 0, 0, this)
+            return Gui.Button.State(Result)
         }
     }
 
-    ; TODO DropDownState
+    /** An object that wraps around button state constants. */
+    class State {
+        Value : u16
 
+        /**
+         * Creates a new `Gui.Button.State` object.
+         * 
+         * @param  {Integer}  Value  integer containing state flags
+         */
+        __New(Value) {
+            this.Value := Value
+        }
+        
+        Pushed  => !!(this.Value & Gui.Button.State.Pushed)
+        Focused => !!(this.Value & Gui.Button.State.Focused)
+        Hot     => !!(this.Value & Gui.Button.State.Hot)
 
+        static Unchecked      => 0x0000
+        static Checked        => 0x0001
+        static Indeterminate  => 0x0002
+        static Pushed         => 0x0004
+        static Focused        => 0x0008
+        static Hot            => 0x0200
+        static DropDownPushed => 0x0400
+
+        ; TODO remove unrelated button constants?
+    }
 }

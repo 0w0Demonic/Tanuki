@@ -12,11 +12,19 @@ SldrCtl  := g.AddSlider("r4 w350", 50)
 RadioCtl := g.AddRadio(unset, "Click me?")
 LVCtl    := g.AddListView(unset, StrSplit("Apple Banana Carrot Date Eggplant", A_Space))
 
-Cl := g.AddCommandLink(, "Restart computer")
-Cl.Note := "This might take a while (roughly 240.03 days)."
+Cl := g.AddCommandLink(, "Download free RAM", "I swear this is safe!")
+Cl.ElevationRequired := true
 
-g.Show()
+Sb := g.AddSplitButton(, "Do something")
 
+DoNothing(*) => false
+Sb.OnDropDown((ButtonControl, Rc) {
+    m := Menu()
+    for Str in Array("Option 1", "Option 2", "Option 3") {
+        m.Add(Str, DoNothing, "")
+    }
+    m.Show()
+})
 ; ...
 
 Edt.WebSearch.Enable()
@@ -25,6 +33,18 @@ Edt.OnWebSearch((EditControl, EntryPoint, HasQuery, Success) {
         MsgBox("wow!!!")
     }
 })
+
+hIcon := LoadPicture(A_Desktop . "\icon.ico", "w20 h-1")
+
+g.Show()
+
+esc:: {
+    ExitApp()
+}
+
+^x:: {
+    Sb.DropDown()
+}
 
 class GuiProxy extends AquaHotkey_Backup {
     static Class => Gui
@@ -60,15 +80,3 @@ class GuiProxy extends AquaHotkey_Backup {
     }
 }
 
-^x:: {
-    
-}
-
-esc:: {
-    ExitApp()
-}
-
-class SIZE {
-    cx : i32
-    cy : i32
-}

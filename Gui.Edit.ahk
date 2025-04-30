@@ -1003,11 +1003,11 @@ class Edit {
 
     /**
      * Allows and prevents a single-line edit control from receiving keyboard
-     * focus.
+     * input.
      * 
      * @param   {Boolean}  value  whether to allow focus
      */
-    AllowFocus {
+    AllowInput {
         set {
             static EM_NOSETFOCUS := 0x1507
             static EM_TAKEFOCUS  := 0x1508

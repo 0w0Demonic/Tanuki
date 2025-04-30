@@ -613,74 +613,7 @@ class Tanuki extends AquaHotkey
     }
 }
 
-class HDITEM {
-    mask       : u32
-    cxy        : i32
-    pszText    : uptr
-    hbm        : uptr
-    cchTextMax : i32
-    fmt        : i32
-    lParam     : uPtr
-    iImage     : i32
-    iOrder     : i32
-    type       : u32
-    pvFilter   : uPtr
-}
-
 #Include "%A_LineFile%/../RECT.ahk"
+#Include "%A_LineFile%/../Box.ahk"
 #Include "%A_LineFile%/../Gdi.ahk"
-
-class NMHDR {
-    hwndFrom : uptr
-    idFrom   : uptr
-    code     : i32
-}
-
-class NMCUSTOMDRAW {
-    hdr         : NMHDR
-    dwDrawStage : u32
-    hdc         : uptr
-    rc          : RECT
-    dwItemSpec  : uptr
-    uItemState  : u32
-    lItemlParam : iptr
-}
-
-class NMSEARCHWEB {
-    hdr             : NMHDR
-    entrypoint      : i32
-    hasQueryText    : i32
-    invokeSucceeded : i32
-}
-
-class POINTL {
-    x : i32
-    y : i32
-
-    __New(x := 0, y := 0) {
-        this.x := x
-        this.y := y
-    }
-}
-
-class PAINTSTRUCT {
-    hdc         : uPtr
-    fErase      : i32
-    rcPaint     : RECT
-    fRestore    : i32
-    fIncUpdate  : i32
-    rgbReserved : 32
-}
-
-class BUTTON_IMAGELIST {
-    himl   : uPtr
-    margin : RECT
-    uAlign : u32
-}
-
-class BUTTON_SPLITINFO {
-    mask        : u32
-    himlGlyph   : uPtr
-    uSplitStyle : u32
-    size        : SIZE
-}
+#Include "%A_LineFile%/../util.ahk"
