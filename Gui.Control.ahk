@@ -63,4 +63,14 @@ class Control {
         get => ControlGetExStyle(this)
         set => ControlSetExStyle(value, this)
     }
+
+    ; TODO Size
+    Size {
+        get {
+
+        }
+        set {
+
+        }
+    }
 }

@@ -9,7 +9,19 @@
 AddSplitButton(Opt := "", Txt?) {
     ; TODO use .IdealSize as default or something
     Ctl := this.Add("Custom", "ClassButton 0xC" . Opt, Txt?)
+    static ContainsSizingOptions := "
+    (
+    Six)
+    (?(DEFINE) (?<size> r | (?:w|h) (?: p(?:\+|-) )? )
+               (?<integer> 0 | [1-9]\d*+ )
+               (?<float> (?&integer)? \. \d++ )
+               (?<number>  (?&integer) | (?&float) ))
+    (?&size) (?&number)
+    )"
     ObjSetBase(Ctl, Gui.SplitButton.Prototype)
+    if (!(Opt ~= ContainsSizingOptions)) {
+        Ctl.Size := Ctl.IdealSize
+    }
     return Ctl
 }
 
@@ -24,9 +36,7 @@ class SplitButton extends Gui.Button {
      * @example
      * 
      * IList := ImageList().Add(A_Desktop . "\icon.ico")
-     * SplitBtn.Settings := BUTTON_SPLITINFO()
-     *          .NoSplit().AlignLeft()
-     *          .ImageList(IList)
+     * SplitBtn.Settings := BUTTON_SPLITINFO().AlignLeft().ImageList(IList)
      * 
      * @param   {BUTTON_SPLITINFO}  value  the new options
      * @return  {BUTTON_SPLITINFO}
@@ -51,6 +61,12 @@ class SplitButton extends Gui.Button {
 
     /**
      * Sent when the user clicks the drop down arrow.
+     * The callback function receives a `NMBCDROPDOWN` struct as its second
+     * parameter.
+     * 
+     * @example
+     * MyButton_DropDown(ButtonControl, DropDownStruct) {
+     * }
      * 
      * @param   {Func}      Callback   the function to call
      * @param   {Integer?}  AddRemove  add or remove the function
@@ -58,53 +74,48 @@ class SplitButton extends Gui.Button {
      */
     OnDropDown(Callback, AddRemove?) {
         static BTN_DROPDOWN := -1248
-        try this.Style |= Gui.Button.Style.Notify
+        static WM_NOTIFY    := 0x004E
 
-        OnMessage(0x004E, (wParam, lParam, msg, hwnd) {
-            Struct := StructFromPtr(NMBCDROPDOWN, lParam)
-            MsgBox(Struct.hdr.hwndFrom . " " Struct.hdr.idFrom . " " . Struct.hdr.code)
-        })
-        return Gui.Event.OnNotify(this, BTN_DROPDOWN, DropDown, AddRemove?) 
+        try this.Style |= Gui.Button.Style.Notify
+        return Gui.Event.OnNotify(this, BTN_DROPDOWN, DropDown)
 
         DropDown(ButtonControl, lParam) {
-            Rc := StructFromPtr(NMBCDROPDOWN, lParam).rcButton
-            Callback(ButtonControl, Rc)
+            Callback(ButtonControl, StructFromPtr(NMBCDROPDOWN, lParam))
         }
     }
 
-    ; TODO generate a BTN_DROPDOWN event
     /**
-     * 
+     * Causes a drop down action for the button.
+     * This method generates a WM_NOTIFY message, which can be catched by
+     * using `.OnDropDown()`.
      */
     DropDown() {
         static BCM_SETDROPDOWNSTATE := 0x1606
+        static BCN_DROPDOWN         := -1248
+        static WM_NOTIFY            := 0x004E
         SendMessage(BCM_SETDROPDOWNSTATE, true, 0, this)
+
+        Id := DllCall("GetDlgCtrlID", "Ptr", this.Hwnd)
         
-        static BCN_DROPDOWN := -1248
-        Notif := NMBCDROPDOWN()
-        Header := Notif.hdr
-
+        Notif           := NMBCDROPDOWN()
+        Header          := Notif.hdr
         Header.hwndFrom := this.Hwnd
-        Header.idFrom := DllCall("GetDlgCtrlID", "Ptr", this.Hwnd)
-        Header.code := BCN_DROPDOWN
+        Header.idFrom   := Id
+        Header.code     := BCN_DROPDOWN
 
-        Client := RECT.OfClient(this)
-        rc := Notif.rcButton
-        rc.Left   := Client.Left
-        rc.Top    := Client.Top
-        rc.Right  := Client.Right
-        rc.Bottom := Client.Bottom
+        Client    := RECT.OfClient(this)
+        Rc        := Notif.rcButton
+        Rc.Left   := Client.Left
+        Rc.Top    := Client.Top
+        Rc.Right  := Client.Right
+        Rc.Bottom := Client.Bottom
 
-        SendMessage(WM_NOTIFY := 0x004E, Header.idFrom, ObjGetDataPtr(Notif), this)
+        SendMessage(WM_NOTIFY, Id, ObjGetDataPtr(Notif), this.Gui.Hwnd)
     }
 
-    ; TODO generate a BTN_DROPDOWN event
-    /**
-     * 
-     */
+    /** Reverts the drop down static of the button. */
     UndoDropDown() {
         static BCM_SETDROPDOWNSTATE := 0x1606
         SendMessage(BCM_SETDROPDOWNSTATE, false, 0, this)
-        ControlHideDropDown(this)
     }
 }

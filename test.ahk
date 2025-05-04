@@ -1,8 +1,9 @@
 #Requires AutoHotkey v2
 #Include "%A_LineFile%/../tanuki.ahk"
+#Include <AquaHotkeyX>
 
 g        := Gui("Theme:Catppuccin")
-Btn      := g.AddButton("0x0F", "Hello, world!")
+Btn      := g.AddButton("h34.000", "Hello, world!")
 DDLCtl   := g.AddDropDownList(unset, Array("this", "is", "a", "test"))
 
 Edt      := g.AddEdit("r1 w380")
@@ -16,15 +17,14 @@ Cl := g.AddCommandLink(, "Download free RAM", "I swear this is safe!")
 Cl.ElevationRequired := true
 
 Sb := g.AddSplitButton(, "Do something")
-
-DoNothing(*) => false
 Sb.OnDropDown((ButtonControl, Rc) {
     m := Menu()
     for Str in Array("Option 1", "Option 2", "Option 3") {
-        m.Add(Str, DoNothing, "")
+        m.Add(Str, (*) => false, "")
     }
     m.Show()
 })
+
 ; ...
 
 Edt.WebSearch.Enable()
@@ -35,7 +35,6 @@ Edt.OnWebSearch((EditControl, EntryPoint, HasQuery, Success) {
 })
 
 hIcon := LoadPicture(A_Desktop . "\icon.ico", "w20 h-1")
-
 g.Show()
 
 esc:: {
@@ -79,4 +78,63 @@ class GuiProxy extends AquaHotkey_Backup {
     class SplitButton extends GuiProxy.Button {
     }
 }
+
+class Subclass {
+    __New(Hwnd) {
+        ; TODO error checks
+        this.DefineProp("Hwnd", { Get: (Instance) => Hwnd })
+    }
+
+    ;static __New() => OnMessage(WM_TANUKIHOOK := 0x7FFF0000, this.Dispatcher)
+
+    static Dispatcher(wParam, lParam, Msg, Hwnd) {
+        ToolTip(wParam " " lParam " " Msg " " Hwnd)
+        ; ...
+        ;Output.DoDefault := ((Result == "") || (Result == Subclass.DoDefault))
+        ;return Result
+    }
+
+    static DoDefault {
+        get {
+            static Obj := Object()
+            return Obj
+        }
+    }
+
+    static OnMessage(MsgNumber, Callback, AddRemove?) {
+
+    }
+
+    static OnNotify(NotifyNumber, Callback, AddRemove?) {
+        
+    }
+
+    static OnCommand(NotifyNumber, Callback, AddRemove?) {
+
+    }
+}
+
+class Injector extends DLL {
+    static FilePath => A_LineFile "\..\injector.dll"
+    static TypeSignatures => {
+        Inject: "UInt, UInt, Str"
+    }
+}
+
+class TanukiMessage {
+    msg     : u32
+    wParam  : uPtr
+    lParam  : uPtr
+    result  : uPtr
+    handled : i32
+}
+
+OnMessage(0x3CCC, (wParam, lParam, *) {
+    ToolTip(wParam " " lParam)
+    return 0
+})
+
+Notepad := WinGetID("ahk_exe notepad.exe")
+
+Injector.Inject(Notepad, A_ScriptHwnd, A_LineFile "\..\WindowProc.dll")
 

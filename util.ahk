@@ -56,7 +56,6 @@ class HotItemChange {
         this.Value := Value
     }
 
-    Other          =>   (this.Value == HotItemChange.Other)
     Mouse          => !!(this.Value  & HotItemChange.Mouse)
     ArrowKeys      => !!(this.Value  & HotItemChange.ArrowKeys)
     Accelerator    => !!(this.Value  & HotItemChange.Accelerator)
