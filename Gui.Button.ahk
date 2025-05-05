@@ -36,7 +36,6 @@ class Button {
 
     /** All button styles. */
     class Style {
-        ; TODO remove unrelated button constants?
         static PushButton         => 0x0000
         static DefaultPushButton  => 0x0001
         static CheckBox           => 0x0002
@@ -215,7 +214,13 @@ class Button {
     }
 
     /**
+     * TODO test this
      * 
+     * Retrieves and changes the structure that describes the image list of
+     * the button control.
+     * 
+     * @param   {BUTTON_IMAGELIST}  value  the new image list to display
+     * @return  {BUTTON_IMAGELIST}
      */
     ImageList {
         get {
@@ -234,27 +239,25 @@ class Button {
         }
     }
 
-    ; TODO just do TextMargin { get; set; } ?
-
-    GetTextMargin() {
-        static BCM_GETTEXTMARGIN := 0x1605
-        Rc := RECT()
-        SendMessage(BCM_GETTEXTMARGIN, 0, ObjGetDataPtr(Rc), this)
-        return Rc
-    }
-
-    SetTextMargin(Rc, Relative := false) {
-        static BCM_SETTEXTMARGIN := 0x1604
-        Rc := RECT.Create(Rc)
-        if (Relative) {
-            OldRc := this.GetTextMargin()
-            ; TODO add RECT.add(Other)?
-            Rc.Left   += OldRc.Left
-            Rc.Top    += OldRc.Top
-            Rc.Right  += OldRc.Right
-            Rc.Bottom += OldRc.Bottom
+    /**
+     * Retrieves and changes the margins used to draw text in the button
+     * control.
+     * 
+     * @param   {RECT/Array/String}  Rc  the new text margin
+     * @return  {RECT}
+     */
+    TextMargin {
+        get {
+            static BCM_GETTEXTMARGIN := 0x1605
+            Rc := RECT()
+            SendMessage(BCM_GETTEXTMARGIN, 0, ObjGetDataPtr(Rc), this)
+            return Rc
         }
-        SendMessage(BCM_SETTEXTMARGIN, 0, ObjGetDataPtr(Rc), this)
+        set {
+            static BCM_SETTEXTMARGIN := 0x1604
+            Rc := RECT.Create(value)
+            SendMessage(BCM_SETTEXTMARGIN, 0, ObjGetDataPtr(Rc), this)
+        }
     }
 
     /**
@@ -347,7 +350,5 @@ class Button {
         static Focused        => 0x0008
         static Hot            => 0x0200
         static DropDownPushed => 0x0400
-
-        ; TODO remove unrelated button constants?
     }
 }

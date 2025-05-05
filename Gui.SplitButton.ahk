@@ -9,20 +9,30 @@
 AddSplitButton(Opt := "", Txt?) {
     ; TODO use .IdealSize as default or something
     Ctl := this.Add("Custom", "ClassButton 0xC" . Opt, Txt?)
-    static ContainsSizingOptions := "
-    (
-    Six)
-    (?(DEFINE) (?<size> r | (?:w|h) (?: p(?:\+|-) )? )
-               (?<integer> 0 | [1-9]\d*+ )
-               (?<float> (?&integer)? \. \d++ )
-               (?<number>  (?&integer) | (?&float) ))
-    (?&size) (?&number)
-    )"
     ObjSetBase(Ctl, Gui.SplitButton.Prototype)
-    if (!(Opt ~= ContainsSizingOptions)) {
-        Ctl.Size := Ctl.IdealSize
-    }
+    Ctl.ApplyDefaultSize(Opt)
     return Ctl
+}
+
+class CustomButton extends AquaHotkey_Ignore {
+    ApplyDefaultSize(Opt) {
+        static ContainsSizingOptions := "
+        (
+        Six)
+        (?(DEFINE) (?<size> r | (?:w|h) (?: p(?:\+|-) )? )
+                (?<integer> 0 | [1-9]\d*+ )
+                (?<float> (?&integer)? \. \d++ )
+                (?<number>  (?&integer) | (?&float) ))
+        (?&size) (?&number)
+        )"
+
+        if (!(Opt ~= ContainsSizingOptions)) {
+            ; TODO make this into:
+            ; `Ctl.Size := Ctl.IdealSize`
+            Size := this.IdealSize
+            ControlMove(unset, unset, Size.cx, Size.cy, this)
+        }
+    }
 }
 
 /**
@@ -30,6 +40,10 @@ AddSplitButton(Opt := "", Txt?) {
  * default value, or select from a drop-down list bound to a secondary button.
  */
 class SplitButton extends Gui.Button {
+    static __New() {
+        (AquaHotkey_Backup.__New)(this, Tanuki.Gui.CustomButton)
+    }
+
     /**
      * Retrieves and changes the current options set for the split button
      * control.

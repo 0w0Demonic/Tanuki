@@ -391,62 +391,26 @@ class Edit {
             }
         }
     }
-
+    
     /**
-     * Returns an object that wraps around the text area of the edit control.
+     * Retrieves and changes the `RECT` that contains the bounds of the
+     * text display area. This area defines where text is rendered within
+     * the edit control.
      * 
-     * @return  {Gui.Edit.TextArea}
+     * @param   {RECT/Array/String}  value  the new text bounds
+     * @return  {RECT}
      */
-    TextArea => Gui.Edit.TextArea(this)
-
-    /** An object that wraps around the text area of an edit control. */
-    class TextArea {
-        /**
-         * Constructs a new `Gui.Edit.TextArea` object.
-         * 
-         * @param   {Gui.Edit}  EditControl  the edit control to manage
-         */
-        __New(EditControl) {
-            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
-                throw TypeError("Expected a Gui.Edit",, Type(EditControl))
-            }
-            this.DefineProp("Edit", { Get: (Instance) => EditControl })
-        }
-
-        /**
-         * Returns a `RECT` that contains the bounds of the text display area.
-         * This area defines where text is rendered within the edit control and
-         * can be modified using `.SetBounds(Rc, Absolute := false)`.
-         * 
-         * @return  {RECT}
-         */
-        GetBounds() {
+    TextArea {
+        get {
             static EM_GETRECT := 0x00B2
             Rc := RECT()
             SendMessage(EM_GETRECT, 0, ObjGetDataPtr(Rc), this.Edit)
             return Rc
         }
-
-        /**
-         * Modifies the text `RECT` that contains the bounds the text display
-         * area.
-         * 
-         * @param   {RECT/Array/String}  Rc        new RECT defining text bounds
-         * @param   {Boolean?}           Relative  change relative to old RECT
-         */
-        SetBounds(Rc, Relative := false) {
+        set {
             static EM_SETRECT   := 0x00B3
-
-            Rc := RECT.Create(Rc)
-            if (Relative) {
-                OldRc := this.GetBounds()
-                Rc.Left   += OldRc.Left
-                Rc.Top    += OldRc.Top
-                Rc.Right  += OldRc.Right
-                Rc.Bottom += OldRc.Bottom
-            }
-
-            SendMessage(EM_SETRECT, !!Relative, ObjGetDataPtr(Rc), this.Edit)
+            Rc := RECT.Create(value)
+            SendMessage(EM_SETRECT, 0, ObjGetDataPtr(Rc), this.Edit)
             return this
         }
     }
@@ -608,6 +572,15 @@ class Edit {
     }
 
     /**
+     * Resets the undo flag of the edit control, which is set whenever an
+     * operation within the edit control can be undone. 
+     */
+    EmptyUndoBuffer() {
+        static EM_EMPTYUNDOBUFFER := 0x00CD
+        SendMessage(EM_EMPTYUNDOBUFFER, 0, 0, this)
+    }
+
+    /**
      * Gets the index of the line that contains the specified character index
      * in a multiline edit control.
      * 
@@ -662,7 +635,8 @@ class Edit {
     }
 
     /**
-     * Gets and retrieves the character used for the password option.
+     * Gets and retrieves the character used for the password option. Setting
+     * an empty string removes the password char.
      * 
      * @param   {String}  value  the new character to use (or empty string)
      * @return  {String}
@@ -684,15 +658,6 @@ class Edit {
             Char := Ord(value)
             SendMessage(EM_SETPASSWORDCHAR, Char, 0, this)
         }
-    }
-
-    /**
-     * Resets the undo flag of the edit control, which is set whenever an
-     * operation within the edit control can be undone. 
-     */
-    EmptyUndoBuffer() {
-        static EM_EMPTYUNDOBUFFER := 0x00CD
-        SendMessage(EM_EMPTYUNDOBUFFER, 0, 0, this)
     }
 
     /**
@@ -940,7 +905,7 @@ class Edit {
      * A "balloon tip" is a notification that appears above the edit control,
      * resembling a cartoon speech bubble.
      * 
-     * TODO doesn't work externally
+     * TODO doesn't work externally because memory is not shared
      */
     class BalloonTip {
         cbStruct : u32 := ObjGetDataSize(this)
@@ -1014,6 +979,9 @@ class Edit {
             SendMessage((value) ? EM_TAKEFOCUS : EM_NOSETFOCUS, 0, 0, this)
         }
     }
+
+    ; TODO create .Zoom class, if `EM_GETZOOM` and `EM_SETZOOM` work
+    ;      on regular edit controls
 
     /** All extended edit control styles. */
     class ExStyle {

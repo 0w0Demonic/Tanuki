@@ -98,15 +98,10 @@ class RECT {
         return Rc
     }
 
-    ToBox() {
-        return Box(this.Left,
-                   this.Top,
-                   this.Right - this.Left,
-                   this.Bottom - this.Top)
-    }
-
     ToString() {
         return Format("Left: {}, Top: {}, Right: {}, Bottom: {}",
                       this.Left, this.Top, this.Right, this.Bottom)
     }
+
+    ; TODO `SetRelativeSize()` or some shorter name
 }

@@ -17,6 +17,7 @@ Cl := g.AddCommandLink(, "Download free RAM", "I swear this is safe!")
 Cl.ElevationRequired := true
 
 Sb := g.AddSplitButton(, "Do something")
+ReferenceButton := g.AddButton(, "Do something")
 Sb.OnDropDown((ButtonControl, Rc) {
     m := Menu()
     for Str in Array("Option 1", "Option 2", "Option 3") {
@@ -46,10 +47,10 @@ esc:: {
 }
 
 class GuiProxy extends AquaHotkey_Backup {
-    static Class => Gui
-
-    ; force load the `Tanuki` class just to be sure
-    static __New() => (Tanuki && super.__New())
+    static __New() {
+        (Tanuki) ; force a load
+        super.__New(Gui)
+    }
 
     class Control {
         __New(Hwnd) {
@@ -128,13 +129,3 @@ class TanukiMessage {
     result  : uPtr
     handled : i32
 }
-
-OnMessage(0x3CCC, (wParam, lParam, *) {
-    ToolTip(wParam " " lParam)
-    return 0
-})
-
-Notepad := WinGetID("ahk_exe notepad.exe")
-
-Injector.Inject(Notepad, A_ScriptHwnd, A_LineFile "\..\WindowProc.dll")
-

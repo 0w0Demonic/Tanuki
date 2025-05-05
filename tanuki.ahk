@@ -16,7 +16,9 @@ class Tanuki extends AquaHotkey
      * which is required to save e.g. its the old `__New()` method.
      */
     class Gui_Old extends AquaHotkey_Backup {
-        static Class => Gui
+        static __New() {
+            super.__New(Gui)
+        }
     }
 
     /**
