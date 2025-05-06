@@ -2,15 +2,11 @@
  *
  */
 class CustomButton extends AquaHotkey_MultiApply {
+    static __New() => super.__New(Tanuki.Gui.SplitButton,
+                                  Tanuki.Gui.PushButton)
     /**
      * 
-     */
-    static __New() {
-        super.__New(Tanuki.Gui.SplitButton, Tanuki.Gui.CommandLink)
-    }
-
-    /**
-     * 
+     * @param   {String}  Opt  a string containing GuiCtrl options
      */
     ApplySize(Opt) {
         static ContainsSizingOptions := "
@@ -26,8 +22,8 @@ class CustomButton extends AquaHotkey_MultiApply {
         if (!(Opt ~= ContainsSizingOptions)) {
             ; TODO make this into:
             ; `Ctl.Size := Ctl.IdealSize`
-            Size := this.IdealSize
-            ControlMove(unset, unset, Size.cx, Size.cy, this)
+            Sz := this.IdealSize
+            ControlMove(unset, unset, Sz.cx // 2, Sz.cy, this)
         }
     }
 }

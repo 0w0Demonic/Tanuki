@@ -85,14 +85,23 @@ class Tanuki extends AquaHotkey
          */
         Add(ControlType, Opt := "", Txt?) {
             Ctl := (Tanuki.Gui_Old.Prototype.Add)(this, ControlType, Opt, Txt?)
-            Ctl.ApplyTheme(this.Theme)
+            Theme := this.Theme
+            if (!ObjOwnPropCount(Theme)) {
+                Theme := ObjGetBase(Ctl).Theme
+            }
+            Ctl.ApplyTheme(Theme)
             return Ctl
         }
 
         #Include "%A_LineFile%/../Button.ahk"
+
         #Include "%A_LineFile%/../CustomButton.ahk"
+        #Include "%A_LineFile%/../ButtonCommon.ahk"
+
+        #Include "%A_LineFile%/../PushButton.ahk"
         #Include "%A_LineFile%/../CommandLink.ahk"
         #Include "%A_LineFile%/../SplitButton.ahk"
+
         #Include "%A_LineFile%/../CheckBox.ahk"
 
         /**
@@ -196,7 +205,7 @@ class Tanuki extends AquaHotkey
          * @param   {Object/String}  value  object, name of object or JSON file
          */
         Theme {
-            get => Catppuccin
+            get => {}
             set {
                 Theme := Tanuki.LoadTheme(value)
 
@@ -419,6 +428,8 @@ class Tanuki extends AquaHotkey
          * 
          */
         AddText(Opt?, Txt?) => this.Add("Text", Opt?, Txt?)
+
+        #Include "%A_LineFile%/../StaticControl.ahk"
 
         /**
          * 

@@ -12,7 +12,6 @@ AddCommandLink(Opt := "", Txt?, Note?) {
     if (IsSet(Note)) {
         Ctl.Note := Note
     }
-    ; TODO add Gui.Control.Prototype.Size or something to deal with sizing
     return Ctl
 }
 

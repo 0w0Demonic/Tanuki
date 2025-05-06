@@ -19,6 +19,7 @@ class Control {
      * @param   {Object/String}  value  the theme to apply
      */
     Theme {
+        get => {}
         set {
             Theme := this.ApplyTheme(Tanuki.LoadTheme(value))
             this.DefineProp("Theme", {
@@ -62,6 +63,16 @@ class Control {
     ExStyle {
         get => ControlGetExStyle(this)
         set => ControlSetExStyle(value, this)
+    }
+
+
+    Pos {
+        get {
+
+        }
+        set {
+
+        }
     }
 
     ; TODO Size

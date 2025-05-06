@@ -34,8 +34,7 @@ class Button {
         return Theme
     }
 
-    /** All button styles. */
-    class Style {
+    class Type {
         static PushButton         => 0x0000
         static DefaultPushButton  => 0x0001
         static CheckBox           => 0x0002
@@ -53,11 +52,14 @@ class Button {
         static CommandLink        => 0x000E
         static DefaultCommandLink => 0x000F
         static TypeMask           => 0x000F
-        
+    }
+
+    /** All button styles. */
+    class Style {
         static LeftText    => 0x0020
         static RightButton => 0x0020
 
-        static Text        => 0x0000
+        static Text        => 0x0000 ; TODO why would I need 0x0000?
         static Icon        => 0x0040
         static Bitmap      => 0x0080
         static Left        => 0x0100
@@ -72,102 +74,6 @@ class Button {
         static Flat        => 0x8000
     }
 
-    /**
-     * Sent when the user clicks the button.
-     * 
-     * @example
-     * MyButton_Click(ButtonControl) {
-     * }
-     * 
-     * @param   {Func}      Callback   the function to call
-     * @param   {Integer?}  AddRemove  add or remove the function
-     */
-    OnClick(Callback, AddRemove?) {
-        static BN_CLICKED := 0x0000
-        return Gui.Event.OnCommand(this, BN_CLICKED, Callback, AddRemove?)
-    }
-
-    /**
-     * Sent when a button should be painted.
-     * 
-     * @example
-     * MyButton_Paint(ButtonControl) {
-     * }
-     * 
-     * @param   {Func}      Callback   the function to call
-     * @param   {Integer?}  AddRemove  add or remove the function
-     * @return  {Gui.Event}
-     */
-    OnPaint(Callback, AddRemove?) {
-        static BN_PAINT := 0x0001
-        return Gui.Event.OnCommand(this, BN_PAINT, Callback, AddRemove?)
-    }
-
-    /**
-     * Sent when the button is diabled.
-     * 
-     * @example
-     * MyButton_Disable(ButtonControl) {
-     * }
-     * 
-     * @param   {Func}      Callback   the function to call
-     * @param   {Integer?}  AddRemove  add or remove the function
-     * @return  {Gui.Event}
-     */
-    OnDisable(Callback, AddRemove?) {
-        static BN_DISABLE := 0x0004
-        return Gui.Event.OnCommand(this, BN_DISABLE, Callback, AddRemove?)
-    }
-
-    /**
-     * Sent when the user double-clicks the button.
-     * 
-     * @example
-     * MyButton_DoubleClick(ButtonControl) {
-     * }
-     * 
-     * @param   {Func}      Callback   the function to call
-     * @param   {Integer?}  AddRemove  add or remove the function
-     * @return  {Gui.Event}
-     */
-    OnDoubleClick(Callback, AddRemove?) {
-        static BN_DOUBLECLICKED := 0x0005
-        return Gui.Event.OnCommand(this, BN_DOUBLECLICKED, Callback, AddRemove?)
-    }
-
-    /**
-     * Sent when a button receives the keyboard focus.
-     * 
-     * @example
-     * MyButton_Focus(ButtonControl) {
-     * }
-     * 
-     * @param   {Func}      Callback   the function to call
-     * @param   {Integer?}  AddRemove  add or remove the function
-     * @return  {Gui.Event}
-     */
-    OnFocus(Callback, AddRemove?) {
-        try this.Style |= Gui.Button.Style.Notify
-        static BN_SETFOCUS := 0x0006
-        return Gui.Event.OnCommand(this, BN_SETFOCUS, Callback, AddRemove?)
-    }
-
-    /**
-     * Sent when a button loses the keyboard focus.
-     * 
-     * @example
-     * MyButton_FocusLost(ButtonControl) {
-     * }
-     * 
-     * @param   {Func}      Callback   the function to call
-     * @param   {Integer?}  AddRemove  add or remove the function
-     * @return  {Gui.Event}
-     */
-    OnFocusLost(Callback, AddRemove?) {
-        try this.Style |= Gui.Button.Style.Notify
-        static BN_KILLFOCUS := 0x0007
-        return Gui.Event.OnCommand(this, BN_KILLFOCUS, Callback, AddRemove?)
-    }
 
     /**
      * Simulates the user clicking the button.
@@ -194,7 +100,7 @@ class Button {
         }
         set {
             static BM_SETIMAGE := 0x00F7
-            return SendMessage(BM_SETIMAGE, !!IsIcon, Obj, this)
+            return SendMessage(BM_SETIMAGE, !!IsIcon, value, this)
         }
     }
 
@@ -256,33 +162,6 @@ class Button {
             static BCM_SETTEXTMARGIN := 0x1604
             Rc := RECT.Create(value)
             SendMessage(BCM_SETTEXTMARGIN, 0, ObjGetDataPtr(Rc), this)
-        }
-    }
-
-    /**
-     * Sent when the mouse is entering or leaving the client area of the button
-     * control.
-     * 
-     * @example
-     * MyButton_OnHover(ButtonControl, Info) {
-     *     if (Info.Entering) {
-     *         ToolTip("entering area...")
-     *     } else {
-     *         ToolTip("leaving area...")
-     *     }
-     * }
-     * 
-     * @param   {Func}      Callback   the function to call
-     * @param   {Integer?}  AddRemove  add or remove the function
-     * @return  {Gui.Event}
-     */
-    OnHover(Callback, AddRemove?) {
-        static BTN_HOTITEMCHANGE := -1249
-        return Gui.Event.OnNotify(this, BTN_HOTITEMCHANGE, Hover, AddRemove?)
-
-        Hover(ButtonControl, lParam) {
-            HotItemStruct := StructFromPtr(NMBCHOTITEM, lParam)
-            Callback(ButtonControl, HotItemStruct.dwFlags)
         }
     }
 
