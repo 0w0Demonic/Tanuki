@@ -16,16 +16,14 @@ class Tanuki extends AquaHotkey
      * which is required to save e.g. its the old `__New()` method.
      */
     class Gui_Old extends AquaHotkey_Backup {
-        static __New() {
-            super.__New(Gui)
-        }
+        static __New() => super.__New(Gui)
     }
 
     /**
      * Defines new properties and methods added to the built-in `Gui` type.
      */
     class Gui {
-        #Include "%A_LineFile%/../Gui.Event.ahk"
+        #Include "%A_LineFile%/../Event.ahk"
         /**
          * Constructs a new Gui, optionally applying a theme given in the form
          * of a class name or file path to a JSON.
@@ -75,7 +73,7 @@ class Tanuki extends AquaHotkey
             (HasTheme && (this.Theme := Theme))
         }
 
-        #Include "%A_LineFile%/../Gui.Control.ahk"
+        #Include "%A_LineFile%/../Control.ahk"
 
         /**
          * Adds a control to the Gui, optionally applying a Gui theme.
@@ -91,10 +89,11 @@ class Tanuki extends AquaHotkey
             return Ctl
         }
 
-        #Include "%A_LineFile%/../Gui.Button.ahk"
-        #Include "%A_LineFile%/../Gui.CommandLink.ahk"
-        #Include "%A_LineFile%/../Gui.SplitButton.ahk"
-        #Include "%A_LineFile%/../Gui.CheckBox.ahk"
+        #Include "%A_LineFile%/../Button.ahk"
+        #Include "%A_LineFile%/../CustomButton.ahk"
+        #Include "%A_LineFile%/../CommandLink.ahk"
+        #Include "%A_LineFile%/../SplitButton.ahk"
+        #Include "%A_LineFile%/../CheckBox.ahk"
 
         /**
          * Adds a ComboBox control to the Gui.
@@ -318,7 +317,7 @@ class Tanuki extends AquaHotkey
             }
         }
 
-        #Include "%A_LineFile%/../Gui.Button.ahk"
+        #Include "%A_LineFile%/../Button.ahk"
 
         class ComboBox {
             ApplyTheme(Theme) {
@@ -332,9 +331,9 @@ class Tanuki extends AquaHotkey
             }
         }
 
-        #Include %A_LineFile%/../Gui.DDL.ahk
-        #Include %A_LineFile%/../Gui.Edit.ahk
-        #Include %A_LineFile%/../Gui.ListView.ahk
+        #Include %A_LineFile%/../DDL.ahk
+        #Include %A_LineFile%/../Edit.ahk
+        #Include %A_LineFile%/../ListView.ahk
 
         class GroupBox {
             ApplyTheme(Theme) {
@@ -369,7 +368,7 @@ class Tanuki extends AquaHotkey
             }
         }
 
-        #Include "%A_LineFile%/../Gui.MonthCal.ahk"
+        #Include "%A_LineFile%/../MonthCal.ahk"
 
         class Picture {
             ApplyTheme(Theme) {

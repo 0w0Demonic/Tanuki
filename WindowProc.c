@@ -28,12 +28,16 @@ typedef struct {
     DWORD threadId;
 } InitProcData;
 
+
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 /* Sets the hwnd of the AutoHotkey script to call. */
 __declspec(dllexport)
 void InitProc(InitProcData* data)
 {
     ahkScript = data->ahkScript;
-    globalHook = SetWindowsHookEx(WH_CALLWNDPROC, WndProc, g_hModule, data->threadId);
+    SetWindowLongPtr(ahkScript, GWLP_WNDPROC, WindowProc);
+    //globalHook = SetWindowsHookEx(WH_CALLWNDPROC, WndProc, g_hModule, data->threadId);
 }
 
 /* structure which is sent as lParam to the AHK script. */
@@ -47,6 +51,16 @@ typedef struct {
 
 #define WM_TANUKIMESSAGE 0x3CCC
 // TODO use RegisterWindowMessage() instead
+
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    TanukiMessage m = { msg, wParam, lParam, 0, FALSE };
+    SendMessage(ahkScript, WM_TANUKIMESSAGE, 0, 0);
+    if (m.handled) {
+        return m.result;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
 
 /* the new window procedure given to the targeted process. */
 LRESULT CALLBACK WndProc(int nCode, WPARAM wParam, LPARAM lParam)
