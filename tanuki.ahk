@@ -13,7 +13,7 @@ class Tanuki extends AquaHotkey
 {
     /**
      * This class saves a snapshot of the previous state of `Gui()`,
-     * which is required to save e.g. its the old `__New()` method.
+     * which is required to save e.g. its old `__New()` method.
      */
     class Gui_Old extends AquaHotkey_Backup {
         static __New() => super.__New(Gui)
@@ -23,7 +23,9 @@ class Tanuki extends AquaHotkey
      * Defines new properties and methods added to the built-in `Gui` type.
      */
     class Gui {
+        /** A class that creates wrapper objects for Gui events. */
         #Include "%A_LineFile%/../Event.ahk"
+
         /**
          * Constructs a new Gui, optionally applying a theme given in the form
          * of a class name or file path to a JSON.
@@ -93,6 +95,7 @@ class Tanuki extends AquaHotkey
             return Ctl
         }
 
+        #Include "%A_LineFile%/../ScrollBar.ahk"
         #Include "%A_LineFile%/../Button.ahk"
 
         #Include "%A_LineFile%/../CustomButton.ahk"
@@ -103,64 +106,6 @@ class Tanuki extends AquaHotkey
         #Include "%A_LineFile%/../SplitButton.ahk"
 
         #Include "%A_LineFile%/../CheckBox.ahk"
-
-        class ScrollBar {
-            class Style {
-                static Horizontal              => 0x0000
-                static Vertical                => 0x0001
-                static TopAlign                => 0x0002
-                static LeftAlign               => 0x0002
-                static BottomAlign             => 0x0004
-                static RightAlign              => 0x0004
-                static SizeBoxTopLeftAlign     => 0x0002
-                static SizeBoxButtomRightAlign => 0x0004
-                static SizeBox                 => 0x0008
-                static SizeGrip                => 0x0010
-            }
-
-            Pos {
-                get {
-
-                }
-                set {
-
-                }
-            }
-
-            Range {
-                get {
-
-                }
-                set {
-
-                }
-            }
-
-            EnableArrows(OnOff := true) {
-
-            }
-
-            ScrollInfo {
-                get {
-
-                }
-                set {
-
-                }
-            }
-
-            ScrollBarInfo {
-                get {
-
-                }
-                set {
-
-                }
-            }
-
-            ; SIF_*
-            ; typedef struct... SCROLLINFO
-        }
 
         /**
          * Adds a DateTime control to the Gui.
@@ -198,11 +143,6 @@ class Tanuki extends AquaHotkey
          * 
          */
         AddRadio(Opt?, Txt?) => this.Add("Radio", Opt?, Txt?)
-
-        /**
-         * 
-         */
-        AddSlider(Opt?, StartVal?) => this.Add("Slider", Opt?, StartVal?)
 
         /**
          * 
@@ -389,6 +329,7 @@ class Tanuki extends AquaHotkey
         #Include "%A_LineFile%/../ListBox.ahk"
         #Include "%A_LineFile%/../MonthCal.ahk"
         #Include "%A_LineFile%/../ProgressBar.ahk"
+        #Include "%A_LineFile%/../Slider.ahk"
 
         class Picture {
             ApplyTheme(Theme) {
@@ -400,20 +341,6 @@ class Tanuki extends AquaHotkey
         class Radio {
             ApplyTheme(Theme) {
 
-            }
-        }
-
-        ; TODO still looks weird
-        class Slider {
-            ApplyTheme(Theme) {
-                Theme := Tanuki.PrepareSubTheme(Theme, "Slider")
-
-                if (HasProp(Theme, "Background")) {
-                    this.Opt("Background" . Theme.Background)
-                }
-                if (HasProp(Theme, "Foreground")) {
-                    this.Opt("c" . Theme.Foreground)
-                }
             }
         }
 

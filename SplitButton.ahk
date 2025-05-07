@@ -107,4 +107,11 @@ class SplitButton extends Gui.Button {
         static BCM_SETDROPDOWNSTATE := 0x1606
         SendMessage(BCM_SETDROPDOWNSTATE, false, 0, this)
     }
+
+    /**
+     * Returns the type of Gui control.
+     * 
+     * @return  {String}
+     */
+    Type => "SplitButton"
 }

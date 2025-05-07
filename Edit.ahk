@@ -220,19 +220,6 @@ class Edit {
     }
 
     /**
-     * Send when the edit control cannot allocate enough memory to meet a
-     * specific request.
-     * 
-     * @param   {Func}      Callback   the function to call
-     * @param   {Integer?}  AddRemove  add or remove the function
-     * @return  {Gui.Event}
-     */
-    OnOutOfMemory(Callback, AddRemove?) {
-        static EN_ERRSPACE := 0x0500
-        return Gui.Event.OnCommand(this, EN_ERRSPACE, Callback, AddRemove?)
-    }
-
-    /**
      * Sent when the current text insertion has exceeded the specified number
      * of characters for the edit control.
      * 
