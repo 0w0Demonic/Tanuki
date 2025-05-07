@@ -145,4 +145,17 @@ class ListView {
         SendMessage(WM_CHANGEUISTATE, UIState, 0, this)
 
     }
+
+    class Style {
+        static Icon                => 0x0000
+        static Report              => 0x0000
+        static SmallIcon           => 0x0000
+        static List                => 0x0000
+        static TypeMask            => 0x0000
+                                   => 0x0000
+        static SingleSelection     => 0x0000
+        static AlwaysShowSelection => 0x0000
+        static SortAscending       => 0x0000
+        static SortDescending      => 0x0000
+    }
 }

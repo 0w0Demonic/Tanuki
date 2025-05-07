@@ -104,14 +104,63 @@ class Tanuki extends AquaHotkey
 
         #Include "%A_LineFile%/../CheckBox.ahk"
 
-        /**
-         * Adds a ComboBox control to the Gui.
-         * 
-         * @param   {String?}  Gui    additional options
-         * @param   {Array?}   Items  a list of items
-         * @return  {Gui.ComboBox}
-         */
-        AddComboBox(Opt?, Items?) => this.Add("ComboBox", Opt?, Items?)
+        class ScrollBar {
+            class Style {
+                static Horizontal              => 0x0000
+                static Vertical                => 0x0001
+                static TopAlign                => 0x0002
+                static LeftAlign               => 0x0002
+                static BottomAlign             => 0x0004
+                static RightAlign              => 0x0004
+                static SizeBoxTopLeftAlign     => 0x0002
+                static SizeBoxButtomRightAlign => 0x0004
+                static SizeBox                 => 0x0008
+                static SizeGrip                => 0x0010
+            }
+
+            Pos {
+                get {
+
+                }
+                set {
+
+                }
+            }
+
+            Range {
+                get {
+
+                }
+                set {
+
+                }
+            }
+
+            EnableArrows(OnOff := true) {
+
+            }
+
+            ScrollInfo {
+                get {
+
+                }
+                set {
+
+                }
+            }
+
+            ScrollBarInfo {
+                get {
+
+                }
+                set {
+
+                }
+            }
+
+            ; SIF_*
+            ; typedef struct... SCROLLINFO
+        }
 
         /**
          * Adds a DateTime control to the Gui.
@@ -141,23 +190,9 @@ class Tanuki extends AquaHotkey
         AddHotkey(Opt?) => this.Add("Hotkey", Opt?)
 
         /**
-         * Adds a text control to the Gui which can contain links.
-         * 
-         * @param   {String?}  Opt  additional options
-         * @param   {String?}  Txt  the text to display
-         * @return  {Gui.Link}
-         */
-        AddLink(Opt?, Txt?) => this.Add("Link", Opt?, Txt?)
-
-        /**
          * 
          */
         AddPicture(Opt?, FileName?) => this.Add("Picture", Opt?, FileName?)
-
-        /**
-         * 
-         */
-        AddProgress(Opt?, StartVal?) => this.Add("Progress", Opt?, StartVal?)
 
         /**
          * 
@@ -327,12 +362,7 @@ class Tanuki extends AquaHotkey
         }
 
         #Include "%A_LineFile%/../Button.ahk"
-
-        class ComboBox {
-            ApplyTheme(Theme) {
-
-            }
-        }
+        #Include "%A_LineFile%/../Link.ahk"
 
         class DateTime {
             ApplyTheme(Theme) {
@@ -356,38 +386,13 @@ class Tanuki extends AquaHotkey
             }
         }
 
-        class Link {
-            ApplyTheme(Theme) {
-
-            }
-        }
-
-        /**
-         * 
-         */
-        AddListBox(Opt?, Items?) => this.Add("ListBox", Opt?, Items?)
-
-        class ListBox {
-            ApplyTheme(Theme) {
-                Theme := Tanuki.PrepareSubTheme(Theme, "ListBox")
-                Tanuki.ApplyFont(this, Theme)
-                if (HasProp(Theme, "Background")) {
-                    this.Opt("Background" . Theme.Background)
-                }
-            }
-        }
-
+        #Include "%A_LineFile%/../ListBox.ahk"
         #Include "%A_LineFile%/../MonthCal.ahk"
+        #Include "%A_LineFile%/../ProgressBar.ahk"
 
         class Picture {
             ApplyTheme(Theme) {
                 return
-            }
-        }
-
-        class Progress {
-            ApplyTheme(Theme) {
-
             }
         }
 
@@ -430,23 +435,7 @@ class Tanuki extends AquaHotkey
         AddText(Opt?, Txt?) => this.Add("Text", Opt?, Txt?)
 
         #Include "%A_LineFile%/../StaticControl.ahk"
-
-        /**
-         * 
-         */
-        class Text {
-            /**
-             * 
-             */
-            ApplyTheme(Theme) {
-                Theme := Tanuki.PrepareSubTheme(Theme, "Text")
-                Tanuki.ApplyFont(this, Theme)
-                if (HasProp(Theme, "Background")) {
-                    this.Opt("Background" . Theme.Background)
-                }
-                return Theme
-            }
-        }
+        #Include "%A_LineFile%/../Text.ahk"
 
         class TreeView {
             ApplyTheme(Theme) {
@@ -454,21 +443,8 @@ class Tanuki extends AquaHotkey
             }
         }
 
-        /**
-         * 
-         */
-        AddUpDown(Opt?, StartVal?) => this.Add("UpDown", Opt?, StartVal?)
+        #Include "%A_LineFile%/../UpDown.ahk"
 
-        class UpDown {
-            ApplyTheme(Theme) {
-                Theme := Tanuki.PrepareSubTheme(Theme, "UpDown")
-                Tanuki.ApplyFont(this, Theme)
-                if (HasProp(Theme, "Background")) {
-                    this.Opt("Background" . Theme.Background)
-                }
-                return Theme
-            }
-        }
     }
 
     /**

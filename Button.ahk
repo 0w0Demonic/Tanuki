@@ -93,7 +93,7 @@ class Button {
      * @param   {Gdi.Bitmap/Gdi.Icon}  value   the new icon/bitmap
      * @return  {Gdi.Bitmap/Gdi.Icon}
      */
-    Image[IsIcon] {
+    Image[IsIcon := false] {
         get {
             static BM_GETIMAGE := 0x00F6
             return SendMessage(BM_GETIMAGE, !!IsIcon, 0, this)

@@ -4,8 +4,10 @@
 
 g := Gui()
 
-Pb := g.AddCommandLink(Gui.Button.Style.PushLike, "Download free RAM",
+Pb := g.AddCommandLink(, "Download free RAM",
             "We speeding up your PC with this one 🔥")
+
+LB := g.AddListBox(unset,  Array("Hello, world?"))
 
 Rad := g.AddRadio(unset, "Click me?")
 g.Show()
