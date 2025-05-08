@@ -152,10 +152,21 @@ class ListView {
         static SmallIcon           => 0x0000
         static List                => 0x0000
         static TypeMask            => 0x0000
-                                   => 0x0000
+        
         static SingleSelection     => 0x0000
         static AlwaysShowSelection => 0x0000
         static SortAscending       => 0x0000
         static SortDescending      => 0x0000
     }
+}
+
+class InternetExplorer extends COM {
+    static CLSID => "InternetExplorer.Application"
+
+    ; static IID => ""
+
+    __New() {
+
+    }
+
 }
