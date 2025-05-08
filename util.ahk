@@ -261,3 +261,16 @@ class BUTTON_SPLITINFO {
         static Image     => 0x0008
     }
 }
+
+class DRAGLISTINFO {
+    uNotification : i32
+    hWnd          : uPtr
+    ptCursor      : POINT
+}
+
+class POINT {
+    x : i32
+    y : i32
+
+    ToString() => "Point { x = " . this.x . "; y = " .  this.y . "}"
+}

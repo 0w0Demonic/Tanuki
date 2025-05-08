@@ -146,6 +146,7 @@ class ListView {
 
     }
 
+    ; TODO
     class Style {
         static Icon                => 0x0000
         static Report              => 0x0000
@@ -157,6 +158,18 @@ class ListView {
         static AlwaysShowSelection => 0x0000
         static SortAscending       => 0x0000
         static SortDescending      => 0x0000
+        static NoLabelWrap         => 0x0000
+        static AutoArrange         => 0x0000
+        static EditLabels          => 0x0000
+        static OwnerData           => 0x0000
+        static NoScroll            => 0x0000
+        static TypeStyleMask       => 0x0000
+        static AlignTop            => 0x0000
+        static AlignLeft           => 0x0000
+        static AlignMask           => 0x0000
+        static OwnerDrawFixed      => 0x0000
+        static NoColumnHeader      => 0x0000
+        static NoSortHeader        => 0x0000
     }
 }
 

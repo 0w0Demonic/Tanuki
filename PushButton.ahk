@@ -13,5 +13,11 @@ AddPushButton(Opt := "", Txt?) {
 }
 
 class PushButton extends Gui.Button {
-    
+    /**
+     * Returns the type of Gui control.
+     * 
+     * @return  {String}
+     */
+    Type => "PushButton"
 }
+

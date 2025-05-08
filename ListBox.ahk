@@ -16,12 +16,6 @@ class ListBox {
     ; LB_ERR
     ; LB_ERRSPACE
 
-    ; TODO OnOutOfMemory() will probably never fire in AHK to begin with
-
-    OnOutOfMemory() {
-
-    }
-
     OnClick(Callback, AddRemove?) {
         
     }
@@ -63,4 +57,64 @@ class ListBox {
         static ComboBox          => 0x0000
         static Standard          => 0x0000
     }
+
+    EnableDrag() {
+        static DRAGLISTMSGSTRING := "commctrl_DragListMsg"
+        DllCall("MakeDragList", "Ptr", this.Hwnd)
+        m := DllCall("RegisterWindowMessage", "Str", DRAGLISTMSGSTRING)
+        this.DefineProp("DragListMessage", { Get: (Instance) => m })
+    }
+
+    IsDragList {
+        get => !!this.DragListMessage
+        set {
+            if (value) {
+                this.EnableDrag()
+            }
+        }
+    }
+
+    DragListMessage => 0
+
+    ; TODO these don't work
+
+    CreateDragEvent(NotifyCode, Callback, AddRemove?) {
+        return Gui.Event.OnMessage(this.Gui, this.DragListMessage,
+                                   DragEvent, AddRemove?)
+
+        if ()
+        DragEvent(GuiObj, wParam, lParam, Hwnd) {
+            Info := StructFromPtr(DRAGLISTINFO, lParam)
+            if (Info.Hwnd != this.Hwnd) {
+                return
+            }
+            if (Info.uNotification != NotifyCode) {
+                return
+            }
+            return Callback(this, Info.ptCursor)
+        }
+    }
+
+    OnDragBegin(Callback, AddRemove?)  {
+        static DL_BEGINDRAG := 0x0400 + 133
+        return this.CreateDragEvent(DL_BEGINDRAG, Callback, AddRemove?)
+    }
+
+    OnDrag(Callback, AddRemove?) {
+        static DL_DRAGGING := 0x0400 + 134
+        return this.CreateDragEvent(DL_DRAGGING, Callback, AddRemove?)
+    }
+
+    OnDropped(Callback, AddRemove?) {
+        static DL_DROPPED := 0x0400 + 135
+        return this.CreateDragEvent(DL_DROPPED, Callback, AddRemove?)
+    }
+
+    OnDragCancel(Callback, AddRemove?) {
+        static DL_CANCELDRAG := 0x0400 + 136
+        return this.CreateDragEvent(DL_CANCELDRAG, Callback, AddRemove?)
+    }
+
+    ; TODO return values
+    ; DL_CURSORSET...
 }

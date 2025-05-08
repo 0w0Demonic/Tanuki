@@ -55,4 +55,11 @@ class CommandLink extends Gui.Button {
             return SendMessage(BCM_GETNOTELENGTH, 0, 0, this)
         }
     }
+
+    /**
+     * Returns the type of Gui control.
+     * 
+     * @return  {String}
+     */
+    Type => "CommandLink"
 }
