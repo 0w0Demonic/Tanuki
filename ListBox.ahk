@@ -82,7 +82,6 @@ class ListBox {
         return Gui.Event.OnMessage(this.Gui, this.DragListMessage,
                                    DragEvent, AddRemove?)
 
-        if ()
         DragEvent(GuiObj, wParam, lParam, Hwnd) {
             Info := StructFromPtr(DRAGLISTINFO, lParam)
             if (Info.Hwnd != this.Hwnd) {

@@ -15,9 +15,6 @@ LB.OnDragBegin((LbControl, Point) {
     return true
 })
 
-LB.OnDrag((LbControl, Point) {
-    ToolTip(String(Point))
-})
 LB.Add(Array(
     "Hello, world?",
     "Light's are on",
@@ -60,7 +57,11 @@ WM_TANUKIMESSAGE := 0x3CCC
 EditControl := WinGetID("ahk_exe notepad.exe")
 
 OnMessage(WM_TANUKIMESSAGE, (wParam, lParam, Msg, Hwnd) {
-    Info := StructFromPtr(TanukiMessage, lParam)
+    p := DllCall("GlobalLock", "Ptr", lParam)
+    Info := StructFromPtr(TanukiMessage, p)
+    ToolTip(Info.wParam)
+    DllCall("GlobalUnlock", "Ptr", lParam)
 })
 
-Injector.Inject(EditControl, A_ScriptHwnd, A_LineFile "/../windowProc2.dll")
+WindowProcDll := A_LineFile . "/../windowProc2.dll"
+Injector.Inject(EditControl, A_ScriptHwnd, WindowProcDll)
