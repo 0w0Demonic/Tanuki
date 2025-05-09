@@ -49,7 +49,7 @@ class InjectorDLL extends DLL {
     static FilePath => A_LineFile . "/../injector2.dll"
 
     static TypeSignatures => {
-        Inject: "Ptr, Ptr, Str, Ptr"
+        Inject: "Ptr, Ptr, Str"
     }
 }
 
@@ -68,14 +68,7 @@ class Subclass {
     }
 
     __New(TargetHwnd) {
-        Buf := TanukiMessage()
-        Ptr := ObjGetDataSize(Buf)
-
-        this.DefineProp("Ptr", { Get: (Instance) => Ptr })
-        this.DefineProp("Buf", { Get: (Instance) => Buf })
-
-        Result := InjectorDLL.Inject(TargetHwnd, A_ScriptHwnd,
-                        Subclass.DllPath, Ptr)
+        Result := InjectorDLL.Inject(TargetHwnd, A_ScriptHwnd, Subclass.DllPath)
 
         switch (Result) {
             case 1: M := "Unable to open process of AutoHotkey script."
@@ -93,9 +86,6 @@ class Subclass {
         this.Commands := CreateMap()
 
         OnMessage(Subclass.MsgNumber, Callback)
-        this.DefineProp("__Delete", {
-            Call: (Instance) => OnMessage(Subclass.MsgNumber, Callback, false)
-        })
 
         static CreateMap() {
             M         := Map()
@@ -111,23 +101,23 @@ class Subclass {
         if (!HasMethod(Callback)) {
             throw TypeError("Expected a Function object", Type(Callback))
         }
-        this.Messages[MsgNumber, Callback]
+        this.Messages[MsgNumber] := Callback
     }
 
-    MsgHandler(*) {
-        MsgNumber := this.Buf.Msg
-        Callback := this.RegisteredMessages[MsgNumber]
+    MsgHandler(wParam, lParam, Msg, Hwnd) {
+        TanukiMsg := StructFromPtr(TanukiMessage, lParam)
+
+        Callback := this.Messages[Msg]
         if (!Callback) {
             return
         }
 
-        Result := Callback(this.Buf.wParam, this.Buf.lParam)
+        Result := Callback(this, TanukiMsg.wParam, TanukiMsg.lParam)
         if (Result == "" || Result == Subclass.DoDefault) {
             return
         }
-
-        this.Buf.Result  := Result
-        this.Buf.Handled := true
+        TanukiMsg.Result := Result
+        TanukiMsg.Handled := true
     }
 
     static DoDefault {
@@ -143,4 +133,9 @@ class Subclass {
 }
 
 Notepad := Subclass.FromWindow("ahk_exe notepad.exe")
+
+Notepad.OnMessage(0x20, (EditControl, wParam, lParam) {
+    
+})
+
 

@@ -2,19 +2,17 @@
 // - windowProc2.c
 #include <windows.h>
 #include <stdio.h>
+#include <commctrl.h>
 
-#define WM_TANUKIMESSAGE 0x3CCC
+#define WM_TANUKIMESSAGE 0x3CCC // message number of our callbacks
 
-HWND hAhkScript      = NULL;
-void* pAhkBuffer     = NULL;
-
-LONG_PTR prevWndProc = (LONG_PTR)NULL;
-HWND g_hTarget       = NULL;
+HWND hAhkScript    = NULL;      // handle of the AHK script
+HWND g_hTarget     = NULL;      // handle of our target to subclass
+HMODULE g_hModule  = NULL;      // handle of this DLL
 
 typedef struct {
     HWND hTarget;
     HWND hAhkScript;
-    void* pBuffer;
 } InitData;
 
 typedef struct {
@@ -25,45 +23,113 @@ typedef struct {
     BOOL handled;
 } TanukiMessage, *lpTanukiMessage;
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, WPARAM wParam, LPARAM lParam)
+BOOL APIENTRY DllMain(
+        HMODULE hModule, DWORD reason,
+        WPARAM wParam, LPARAM lParam
+);
+
+LRESULT CALLBACK SubclassProc(
+        HWND hwnd, UINT uMsg,
+        WPARAM wParam, LPARAM lParam,
+        UINT_PTR uIdSubclass, DWORD_PTR dwRefData
+);
+
+__declspec(dllexport) void init(InitData *data);
+
+DWORD WINAPI HookThread(LPVOID lpParam);
+
+/******************************************************************************/
+
+BOOL APIENTRY DllMain(
+        HMODULE hModule, DWORD reason,
+        WPARAM wParam, LPARAM lParam)
 {
     if (reason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hModule);
-    }
-    if (reason == DLL_PROCESS_DETACH) {
-        if (g_hTarget) {
-            SetWindowLongPtr(g_hTarget, GWLP_WNDPROC, prevWndProc);
-        }
+        g_hModule = hModule;
     }
     return TRUE;
 }
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK SubclassProc(
+        HWND hwnd, UINT uMsg,
+        WPARAM wParam, LPARAM lParam,
+        UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
-    HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, sizeof(TanukiMessage));
-
-    TanukiMessage* pMsg = (TanukiMessage*)pAhkBuffer;
-    pMsg->msg     = msg;
-    pMsg->wParam  = wParam;
-    pMsg->lParam  = lParam;
-    pMsg->lResult = 0;
-    pMsg->handled = FALSE;
-    
-    SendMessage(hAhkScript, WM_TANUKIMESSAGE, (WPARAM)hwnd, 0);
-
-    LRESULT result = pMsg->lResult;
-    BOOL handled = pMsg->handled;
-
-    if (pMsg->handled) {
-        return pMsg->lResult;
+    // remove subclass if application is destroyed
+    if (uMsg == WM_NCDESTROY) {
+        RemoveWindowSubclass(hwnd, SubclassProc, uIdSubclass);
+        return DefSubclassProc(hwnd, uMsg, wParam, lParam);
     }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
+
+    // open AHK script process
+    size_t reqSize = sizeof(TanukiMessage);
+    DWORD ahkPID;
+    GetWindowThreadProcessId(hAhkScript, &ahkPID);
+    HANDLE hAhkProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, ahkPID);
+
+    // write TanukiMessage into AHK script's process space
+    void* pRemote = VirtualAllocEx(
+                hAhkProcess, NULL,
+                reqSize, MEM_COMMIT, PAGE_READWRITE);
+    TanukiMessage m = { uMsg, wParam, lParam, 0, FALSE };
+    WriteProcessMemory(hAhkProcess, pRemote, &m, reqSize, NULL);
+
+    // WPARAM - HWND
+    // LPARAM - TanukiMessage*
+    SendMessage(hAhkScript, WM_TANUKIMESSAGE, (WPARAM)hwnd, (LPARAM)pRemote);
+
+    // read same TanukiMessage from AHK script
+    ReadProcessMemory(hAhkProcess, pRemote, &m, reqSize, NULL);
+    VirtualFreeEx(hAhkProcess, pRemote, 0, MEM_RELEASE);
+    CloseHandle(hAhkProcess);
+
+    // return LRESULT of message if handled, otherwise call next proc
+    return (m.handled) ? m.lResult
+                       : DefSubclassProc(hwnd, uMsg, wParam, lParam);
+}
+
+LRESULT CALLBACK WndHook(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode >= 0) {
+        CWPSTRUCT *cwp = (CWPSTRUCT*)lParam;
+
+        if (cwp->hwnd == g_hTarget) {
+            SetWindowSubclass(cwp->hwnd, SubclassProc, 0, 0);
+        }
+    }
+    return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+DWORD WINAPI HookThread(LPVOID lpParam) {
+    DWORD targetThreadId = (DWORD)(uintptr_t)lpParam;
+
+    HHOOK hook = SetWindowsHookEx(
+        WH_CALLWNDPROC,
+        WndHook,
+        g_hModule,
+        targetThreadId
+    );
+
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    UnhookWindowsHookEx(hook);
+    return 0;
 }
 
 __declspec(dllexport)
-void init(InitData *data) {
+void init(InitData *data)
+{
+    INITCOMMONCONTROLSEX icex = { sizeof(icex), ICC_WIN95_CLASSES };
+    InitCommonControlsEx(&icex);
+
     hAhkScript = data->hAhkScript;
-    g_hTarget = data->hTarget;
-    pAhkBuffer = data->pBuffer;
-    prevWndProc = SetWindowLongPtr(g_hTarget, GWLP_WNDPROC, (LONG_PTR)WndProc);
+    g_hTarget  = data->hTarget;
+
+    DWORD targetThreadId = GetWindowThreadProcessId(g_hTarget, NULL);
+    CreateThread(NULL, 0, HookThread, (LPVOID)(uintptr_t)targetThreadId, 0, NULL);
 }
