@@ -1,16 +1,20 @@
 // https://www.github.com/0w0Demonic/Tanuki
 // - windowProc2.c
 #include <windows.h>
+#include <stdio.h>
 
 #define WM_TANUKIMESSAGE 0x3CCC
 
-HWND hAhkScript = NULL;
+HWND hAhkScript      = NULL;
+void* pAhkBuffer     = NULL;
+
 LONG_PTR prevWndProc = (LONG_PTR)NULL;
-HWND g_hTarget = NULL;
+HWND g_hTarget       = NULL;
 
 typedef struct {
     HWND hTarget;
     HWND hAhkScript;
+    void* pBuffer;
 } InitData;
 
 typedef struct {
@@ -26,7 +30,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, WPARAM wParam, LPARAM lPara
     if (reason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hModule);
     }
-    // TODO
     if (reason == DLL_PROCESS_DETACH) {
         if (g_hTarget) {
             SetWindowLongPtr(g_hTarget, GWLP_WNDPROC, prevWndProc);
@@ -37,25 +40,23 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, WPARAM wParam, LPARAM lPara
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    // TODO handle WM_DESTROY and WM_NCDESTROY?
+    HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, sizeof(TanukiMessage));
 
-    HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE,
-                                  sizeof(TanukiMessage));
-
-    TanukiMessage* pMsg = (TanukiMessage*)GlobalLock(hGlobal);
+    TanukiMessage* pMsg = (TanukiMessage*)pAhkBuffer;
     pMsg->msg     = msg;
     pMsg->wParam  = wParam;
     pMsg->lParam  = lParam;
     pMsg->lResult = 0;
     pMsg->handled = FALSE;
-    GlobalUnlock(hGlobal);
+    
+    SendMessage(hAhkScript, WM_TANUKIMESSAGE, (WPARAM)hwnd, 0);
 
-    SendMessage(hAhkScript, WM_TANUKIMESSAGE, (WPARAM)hwnd, (LPARAM)hGlobal);
+    LRESULT result = pMsg->lResult;
+    BOOL handled = pMsg->handled;
+
     if (pMsg->handled) {
         return pMsg->lResult;
     }
-    GlobalFree(hGlobal);
-
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
@@ -63,5 +64,6 @@ __declspec(dllexport)
 void init(InitData *data) {
     hAhkScript = data->hAhkScript;
     g_hTarget = data->hTarget;
+    pAhkBuffer = data->pBuffer;
     prevWndProc = SetWindowLongPtr(g_hTarget, GWLP_WNDPROC, (LONG_PTR)WndProc);
 }

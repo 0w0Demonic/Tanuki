@@ -15,6 +15,7 @@
 typedef struct {
     HWND hTarget;
     HWND hAhkScript;
+    void* pBuffer;
 } InitData;
 
 typedef struct {
@@ -48,7 +49,7 @@ BOOL callRemote(HANDLE hProcess, FARPROC fn, void* hData, size_t reqSize)
 }
 
 __declspec(dllexport)
-int inject(HWND hTarget, HWND hAhkScript, LPWSTR dllPath)
+int inject(HWND hTarget, HWND hAhkScript, LPWSTR dllPath, void* pBuffer)
 {
     DWORD targetPID;
     GetWindowThreadProcessId(hTarget, &targetPID);
@@ -76,7 +77,7 @@ int inject(HWND hTarget, HWND hAhkScript, LPWSTR dllPath)
         return INJECT_ERR_GETPROC;
     }
 
-    InitData data = { hTarget, hAhkScript };
+    InitData data = { hTarget, hAhkScript, pBuffer };
     BOOL ok = callRemote(hProcess, InitProc, &data, sizeof(InitData));
     FreeLibrary(hLocalDll);
     CloseHandle(hProcess);
