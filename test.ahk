@@ -41,6 +41,6 @@ class GuiProxy {
 Notepad := GuiHook.FromWindow("ahk_exe notepad.exe")
 
 Notepad.OnSize((EditControl, WhichMargin, Rc) {
-    ToolTip("sizing...")
+    ToolTip(Rc.Left " " Rc.Top " " Rc.Right " " Rc.Bottom)
     return WindowsHook.DoDefault
 })

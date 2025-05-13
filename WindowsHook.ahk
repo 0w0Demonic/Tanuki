@@ -1,51 +1,70 @@
-
+/**
+ * 
+ */
 class WindowsHook {
-    class Injector extends DLL {
-        static FilePath => A_LineFile . "/../injector2.dll"
+    /** File path containing the new window subclass */
+    static DllPath => A_LineFile . "/../windowProc2.dll"
 
-        static TypeSignatures => {
-            Inject: "Ptr, Ptr, Str"
-        }
-    }
-
-    static DllPath   => A_LineFile . "/../windowProc2.dll"
+    /** Message number used for callbacks to the AHK script */
     static MsgNumber => 0x3CCC
 
+    /** Creates a new window hook from the given GUI control */
     static FromControl(Ctl, WTtl?, WTxt?, ETtl?, ETxt?) {
         Hwnd := ControlGetHwnd(Ctl, WTtl?, WTxt?, ETtl?, ETxt?)
         return this(Hwnd)
     }
 
+    /** Creates a new window hook from the given application */
     static FromWindow(WTtl?, WTxt?, ETtl?, ETxt?) {
         Hwnd := WinGetId(WTtl?, WTxt?, ETtl?, ETxt?)
         return this(Hwnd)
     }
 
+    /** Creates a new window hook from the given HWND */
     __New(TargetHwnd) {
-        Result := WindowsHook.Injector.Inject(
-                TargetHwnd, A_ScriptHwnd, WindowsHook.DllPath)
+        Hwnd := (IsObject(TargetHwnd)) ? TargetHwnd.Hwnd
+                                       : TargetHwnd
+        if (!IsInteger(Hwnd)) {
+            throw TypeError("Expected an Object or Integer",, Type(Hwnd))
+        }
+
+        Result := DllCall(A_LineFile . "\..\injector2.dll\inject", "Ptr", Hwnd,
+            "Ptr", A_ScriptHwnd, "Str", WindowsHook.DllPath)
 
         switch (Result) {
-            case 1: M := "Unable to open process of AutoHotkey script."
-            case 2: M := "Unable to allocate virtual memory."
-            case 3: M := "Unable to write into process"
-            case 4: M := "Unable to create remote thread"
-            case 5: M := "Unable to load 'windowProc.dll'"
-            case 6: M := "Unable to resolve 'windowProc/init'"
+            case 1: Msg := "Unable to open process of AutoHotkey script."
+            case 2: Msg := "Unable to allocate virtual memory."
+            case 3: Msg := "Unable to write into process"
+            case 4: Msg := "Unable to create remote thread"
+            case 5: Msg := "Unable to load 'windowProc.dll'"
+            case 6: Msg := "Unable to resolve 'windowProc/init'"
+        }
+        if (Result) {
+            throw OSError(Msg)
         }
 
         Callback := ObjBindMethod(this, "MsgHandler")
 
-        this.Messages := CreateMap()
-        this.Notifs   := CreateMap()
-        this.Commands := CreateMap()
+        PID := 0
+        DllCall("GetWindowThreadProcessId", "Ptr", Hwnd, "UInt*", &PID)
+        hProcess := DllCall("OpenProcess", "UInt", 0x10, "Int", false,
+                "UInt", PID)
+        
+        Define("Process", hProcess)
+        Define("Messages", CreateMap())
+        Define("Commands", CreateMap())
+        Define("Notifs", CreateMap())
 
         OnMessage(WindowsHook.MsgNumber, Callback)
 
         static CreateMap() {
-            M         := Map()
+            M := Map()
             M.Default := false
             return M
+        }
+
+        Define(PropName, Value) {
+            this.DefineProp(PropName, { Get: (Instance) => Value })
         }
     }
 
@@ -57,6 +76,26 @@ class WindowsHook {
             throw TypeError("Expected a Function object", Type(Callback))
         }
         this.Messages[MsgNumber] := Callback
+    }
+
+    OnNotify(NotifyCode, Callback) {
+        if (!IsInteger(NotifyCode)) {
+            throw TypeError("Expected an Integer",, Type(NotifyCode))
+        }
+        if (!HasMethod(Callback)) {
+            throw TypeError("Expected a Function object", Type(Callback))
+        }
+        this.Notifs[NotifyCode] := Callback
+    }
+
+    OnCommand(NotifyCode, Callback) {
+        if (!IsInteger(NotifyCode)) {
+            throw TypeError("Expected an Integer",, Type(NotifyCode))
+        }
+        if (!HasMethod(Callback)) {
+            throw TypeError("Expected a Function object", Type(Callback))
+        }
+        this.Commands[NotifyCode] := Callback
     }
 
     MsgHandler(wParam, lParam, Msg, Hwnd) {
@@ -75,28 +114,41 @@ class WindowsHook {
         TanukiMsg.Handled := true
     }
 
+    DoDefault => WindowsHook.DoDefault
+
     static DoDefault {
         get {
             static _ := Object()
             return _
         }
     }
-}
 
-class TanukiMessage {
-    msg     : u32
-    wParam  : uPtr
-    lParam  : uPtr
-    result  : uPtr
-    handled : i32
+    __Delete() {
+        DllCall("CloseHandle", "Ptr", this.Process)
+    }
+
+    ReadObject(StructClass, Ptr) {
+        Output := StructClass()
+        OutSize := ObjGetDataSize(Output)
+        OutPtr := ObjGetDataPtr(Output)
+        DllCall("ReadProcessMemory", "Ptr", this.Process, "Ptr", Ptr,
+                "Ptr", OutPtr, "UPtr", OutSize, "Ptr", 0)
+        return Output
+    }
 }
 
 class GuiHook extends WindowsHook {
     OnSize(Callback) {
-        return this.OnMessage(WM_SIZING := 0x0214, Size)
-
-        Size(GuiObj, wParam, lParam) {
-            return Callback(GuiObj, wParam, StructFromPtr(RECT, lParam))
-        }
+        return this.OnMessage(WM_SIZING := 0x0214, (GuiObj, wParam, lParam) {
+            return Callback(GuiObj, wParam, this.ReadObject(RECT, lParam))
+        })
     }
+}
+
+class TanukiMessage {
+    Msg     : u32
+    wParam  : uPtr
+    lParam  : uPtr
+    result  : uPtr
+    handled : i32
 }
