@@ -3,7 +3,7 @@
  */
 class WindowsHook {
     /** File path containing the new window subclass */
-    static DllPath => A_LineFile . "/../windowProc2.dll"
+    static DllPath => A_LineFile . "/../windowProc.dll"
 
     /** Message number used for callbacks to the AHK script */
     static MsgNumber => 0x3CCC
@@ -28,7 +28,7 @@ class WindowsHook {
             throw TypeError("Expected an Object or Integer",, Type(Hwnd))
         }
 
-        Result := DllCall(A_LineFile . "\..\injector2.dll\inject", "Ptr", Hwnd,
+        Result := DllCall(A_LineFile . "\..\injector.dll\inject", "Ptr", Hwnd,
             "Ptr", A_ScriptHwnd, "Str", WindowsHook.DllPath)
 
         switch (Result) {
