@@ -2,14 +2,18 @@
 #Include "%A_LineFile%/../tanuki.ahk"
 #Include <AquaHotkeyX>
 
-g := Gui()
+g := Gui("Theme:Catppuccin")
 
 Pb := g.AddCommandLink(, "Download free RAM",
             "We speeding up your PC with this one 🔥")
 
 LB := g.AddListBox("r4")
+Et := g.AddEdit("r1 w400")
+
+LV := g.AddListView(unset, Array("Hello", "World", "Foo", "Bar"))
 
 LB.IsDragList := true
+if false
 LB.OnDragBegin((LbControl, Point) {
     ToolTip(String(Point))
     return true
@@ -35,11 +39,4 @@ esc:: {
 class GuiProxy {
     
 }
-
-Notepad := GuiHook.FromWindow("ahk_exe notepad.exe")
-
-Notepad.OnSize((this, WhichMargin, Rc) {
-    ToolTip(Rc.Left " " Rc.Top " " Rc.Right " " Rc.Bottom)
-    return this.DoDefault
-})
 

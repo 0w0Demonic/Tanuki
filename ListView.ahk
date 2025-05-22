@@ -172,14 +172,3 @@ class ListView {
         static NoSortHeader        => 0x0000
     }
 }
-
-class InternetExplorer extends COM {
-    static CLSID => "InternetExplorer.Application"
-
-    ; static IID => ""
-
-    __New() {
-
-    }
-
-}

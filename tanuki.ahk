@@ -532,5 +532,3 @@ class Tanuki extends AquaHotkey
 #Include "%A_LineFile%/../Box.ahk"
 #Include "%A_LineFile%/../Gdi.ahk"
 #Include "%A_LineFile%/../util.ahk"
-
-#Include "%A_LineFile%/../WindowsHook.ahk"
