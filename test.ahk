@@ -12,12 +12,7 @@ Et := g.AddEdit("r1 w400")
 
 LV := g.AddListView(unset, Array("Hello", "World", "Foo", "Bar"))
 
-LB.IsDragList := true
-if false
-LB.OnDragBegin((LbControl, Point) {
-    ToolTip(String(Point))
-    return true
-})
+LV.Add(unset, "Value1", "Value2", "Value3", "Value4")
 
 LB.Add(Array(
     "Hello, world?",

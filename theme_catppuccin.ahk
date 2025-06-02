@@ -52,9 +52,9 @@ class Catppuccin {
     }
 
     class ListView {
-        static Background     => "0x1E1E2E"
-        static TextBackground => "0x430909"
-        static Foreground     => "0xa25ea2"
+        static Background     => "0x1f283f"
+        static TextBackground => "0x3d0000"
+        static Foreground     => "0xc687c6"
 
         class Font {
             static Size => 8
