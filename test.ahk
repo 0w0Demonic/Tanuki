@@ -2,6 +2,12 @@
 #Include "%A_LineFile%/../tanuki.ahk"
 #Include <AquaHotkeyX>
 
+class GuiProxy {
+    class Edit {
+
+    }
+}
+
 g := Gui("Theme:Catppuccin")
 
 Pb := g.AddCommandLink(, "Download free RAM",
@@ -30,8 +36,3 @@ g.Show()
 esc:: {
     ExitApp()
 }
-
-class GuiProxy {
-    
-}
-

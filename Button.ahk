@@ -83,24 +83,27 @@ class Button {
         SendMessage(BM_CLICK, 0, 0, this)
     }
 
-    ; TODO wrap this in BITMAP and ICON
-    ; TODO how do I remove that "Type" parameter?
     /**
-     * Retrieves and changes the handle to the image (icon or bitmap)
-     * associated with the button.
+     * Retrieves and changes the handle to the image associated with the button.
      * 
-     * @param   {Boolean}              IsIcon  the type of image
-     * @param   {Gdi.Bitmap/Gdi.Icon}  value   the new icon/bitmap
-     * @return  {Gdi.Bitmap/Gdi.Icon}
+     * @param   {Boolean}     IsIcon  the type of image
+     * @param   {Gdi.Bitmap}  value   the new icon/bitmap
+     * @return  {Gdi.Bitmap}
      */
     Image[IsIcon := false] {
-        get {
-            static BM_GETIMAGE := 0x00F6
-            return SendMessage(BM_GETIMAGE, !!IsIcon, 0, this)
-        }
+        get => SendMessage(BM_GETIMAGE := 0x00F6, true, 0, this)
         set {
-            static BM_SETIMAGE := 0x00F7
-            return SendMessage(BM_SETIMAGE, !!IsIcon, value, this)
+            SendMessage(BM_SETIMAGE := 0x00F7, true, value, this)
+        }
+    }
+
+    /**
+     * Retrieves and change the handle to the icon associated with the button.
+     */
+    Icon {
+        get => SendMessage(BM_GETIMAGE := 0x00F6, true, 0, this)
+        set {
+            SendMessage(BM_SETIMAGE := 0x00F7, true, value, this)
         }
     }
 

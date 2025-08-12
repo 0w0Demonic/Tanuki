@@ -23,6 +23,9 @@ class Tanuki extends AquaHotkey
      * Defines new properties and methods added to the built-in `Gui` type.
      */
     class Gui {
+        static __New() {
+            (Tanuki.Gui_Old)
+        }
         /** A class that creates wrapper objects for Gui events. */
         #Include "%A_LineFile%/../Event.ahk"
 
@@ -414,6 +417,13 @@ class Tanuki extends AquaHotkey
      * @return  {Boolean}
      */
     static ParseGuiOptions(&Opt, &Theme) {
+        static Pattern := "
+        (
+        ix)
+        Theme: (?> " ([^"]++) "
+                 | ' ([^']++) '
+                 |   (\S++)   )
+        )"
         static Pattern := "ix) Theme: (?>  `" ([^`"]++) `" | (\S++) )"
         if (RegExMatch(Opt, Pattern, &Match)) {
             Theme := Match[1] || Match[2]

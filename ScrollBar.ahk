@@ -1,6 +1,6 @@
 
 AddScrollBar(Opt := "") {
-    Ctl := g.Add("Custom", "ClassScrollBar " . Opt)
+    Ctl := this.Add("Custom", "ClassScrollBar " . Opt)
 }
 
 class ScrollBar {

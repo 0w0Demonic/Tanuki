@@ -24,6 +24,8 @@ class ListView {
         static LVM_SETTEXTBKCOLOR  := 0x1026
         static LVM_GETHEADER       := 0x101F
 
+        static CustomDrawHandler   := unset
+
         DllCall("uxtheme\SetWindowTheme",
                 "Ptr", this.Hwnd,
                 "Str", "",
@@ -57,14 +59,17 @@ class ListView {
         if (HasProp(Theme, "Foreground")) {
             Foreground := Tanuki.Swap_RGB_BGR(Theme.Foreground)
             SendMessage(LVM_SETTEXTCOLOR, 0, Foreground, this)
-            this.OnMessage(WM_NOTIFY, CustomDrawMessage)
+            if (IsSet(CustomDrawHandler)) {
+                this.OnMessage(WM_NOTIFY, CustomDrawHandler, false)
+            }
+            this.OnMessage(WM_NOTIFY, CustomDrawHandler := CustomDraw)
         }
 
         this.Opt("+LV" . LVS_EX_DOUBLEBUFFER)
         UIState := (UIS_SET << 8) | UISF_HIDEFOCUS
         SendMessage(WM_CHANGEUISTATE, UIState, 0, this)
 
-        CustomDrawMessage(Hwnd, wParam, lParam, Msg) {
+        CustomDraw(Hwnd, wParam, lParam, Msg) {
             static CDDS_PREPAINT          := 0x00000001
             static CDDS_POSTPAINT         := 0x00000002
             static CDDS_ITEMPREPAINT      := 0x00010001
