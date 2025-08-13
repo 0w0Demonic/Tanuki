@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.0
 
 ; https://www.github.com/0w0Demonic/AquaHotkey
-#Include <AquaHotkey>
+#Include <AquaHotkeyX>
 ; #Include "%A_LineFile%/../themes/theme_catppuccin.ahk"
 
 #DllLoad "uxtheme.dll"
@@ -9,9 +9,9 @@
 
 /**
  * ```
- * ______________________      /\ /\
+ * ______________________,     /\ /\
  *                 - o x |    <_'u'_>
- * _|_ _ __      |/ o |  |      0 .o*
+ * _|_ _ __      |/ o |  |     *0,.o*
  *  |_(_|| | |_| |\ | .  | <(((| ()|
  *                              \/\/
  * ```
@@ -61,8 +61,7 @@ class Tanuki extends AquaHotkey
 ; <<<<
 
 /**
- * Creates a snapshot of the previous `Gui` class. This is one of the first
- * classes that is loaded
+ * Creates a snapshot of the previous `Gui` class.
  */
 class GuiOld extends AquaHotkey_Backup {
     static __New() => super.__New(Gui)
@@ -89,7 +88,7 @@ class Gui {
         ; old `__New()` method
         static __New := Tanuki.GuiOld.Prototype.__New
 
-        HasTheme := Tanuki.Util.ParseTheme(&Opt, &Theme)
+        HasTheme := Tanuki.Theme.Parse(&Opt, &Theme)
         __New(this, Opt, Title?, EventObj?)
 
         if (HasTheme) {
@@ -110,7 +109,7 @@ class Gui {
         ; old `.Opt()` method
         static Opt := Tanuki.GuiOld.Prototype.Opt
 
-        HasTheme := Tanuki.Util.ParseTheme(&Opt, &Theme)
+        HasTheme := Tanuki.Theme.Parse(&Opt, &Theme)
         Opt(this, OptionStr)
 
         if (HasTheme) {
@@ -150,7 +149,7 @@ class Gui {
             return Object()
         }
         set {
-            Theme := Tanuki.Util.LoadTheme(value)
+            Theme := Tanuki.Theme.Load(value)
 
             if (HasProp(Theme, "DarkMode")) {
                 this.DarkMode := Theme.DarkMode
@@ -166,6 +165,7 @@ class Gui {
                     this.TitleTextColor := Theme.Title.Foreground
                 }
             }
+            ; TODO add more dwm stuff
 
             ; apply theme for every control in the Gui
             for GuiControl in this {
@@ -181,103 +181,107 @@ class Gui {
     ; TODO make this less repetitive. Maybe even generate this code over here.
 
     /**
+     * Returns or changes whether dark mode is enabled for the Gui.
      * 
+     * @param   {Boolean}  value  dark mode on/off
+     * @return  {Boolean}
      */
     DarkMode {
         get {
             return !!Tanuki.Dwm.Get(this, Tanuki.Dwm.DarkMode)
         }
         set {
+            Tanuki.Dwm.Set(this, Tanuki.Dwm.DarkMode, !!value)
+        }
+    }
+
+    /**
+     * Returns and changes the color of the window caption.
+     * 
+     * Requires Windows 11.
+     * 
+     * @param   {Integer}  value  RGB color
+     * @return  {Integer}
+     */
+    CaptionColor {
+        get {
+            Color := Tanuki.Dwm.Get(this, Tanuki.Dwm.Color.Caption)
+            return Tanuki.Color.SwapRB(Color)
+        }
+        set {
             Tanuki.Dwm.Set(
                     this,
-                    Tanuki.Dwm.DarkMode,
-                    Tanuki.Color.SwapBGR(value))
+                    Tanuki.Dwm.Color.Caption,
+                    Tanuki.Color.SwapRB(value))
         }
     }
 
-    TitleColor {
+    /**
+     * Returns and changes the color of the window borders.
+     * 
+     * Requires Windows 11.
+     * 
+     * @param   {Integer}  value  RGB color
+     * @return  {Integer}
+     */
+    BorderColor {
         get {
-            DllCall("dwmapi\DwmGetWindowAttribute", "Ptr", this.Hwnd,
-                    "Int", Tanuki.Dwm.Color.Caption,
-                    "Int*", &(Result := 0),
-                    "UInt", 4)
-            return Result
+            Color := Tanuki.Dwm.Get(this, Tanuki.Dwm.Color.Border)
+            return Tanuki.Color.SwapRB(Color)
         }
-
         set {
-
+            Tanuki.Dwm.Set(
+                    this,
+                    Tanuki.Dwm.Color.Border,
+                    Tanuki.Color.SwapRB(value))
         }
     }
-}
 
-/**
- * 
- */
-class Util extends AquaHotkey_Ignore {
-    static LoadTheme(Theme) {
-        if (IsObject(Theme)) {
-            return Theme
+    /**
+     * Returns and changes the color of the window text.
+     * 
+     * Requires Windows 11.
+     * 
+     * @param   {Integer}  value  RGB color
+     * @return  {Integer}
+     */
+    TextColor {
+        get {
+            Color := Tanuki.Dwm.Get(this, Tanuki.Dwm.Color.Text)
+            return Tanuki.Color.SwapRB(Color)
         }
-
-        static Deref1(a) => %a%
-        static Deref2(b) => %b%
-
-        try return (Theme != "a" ? Deref1(Theme) : Deref2(Theme))
-
-        if (!FileExist(Theme)) {
-            throw TargetError("Unable to find Gui theme",, Theme)
+        set {
+            Tanuki.Dwm.Set(
+                    this,
+                    Tanuki.Dwm.Color.Text,
+                    Tanuki.Color.SwapRB(value))
         }
-        ; TODO get a JSON lib somewhere
     }
+
+    /**
+     * 
+     */
+    Corners {
+        get => Tanuki.Dwm.Get(this, Tanuki.Dwm.Corners)
+        set {
+            Tanuki.Dwm.Set(
+                    this,
+                    Tanuki.Dwm.Corners,
+                    Tanuki.Dwm.CornerPreference.Value[value])
+        }
+    }
+
+    #Include "%A_LineFile%/../controls/Controls.ahk"
 }
 
-class Dwm extends AquaHotkey_Ignore {
-    static DarkMode     => (19 + (VerCompare(A_OSVersion, "10.0.18985") >= 0))
-    static Corners      => 33
-
-    class Color {
-        static Border  => 34
-        static Caption => 35
-        static Text    => 36
-    }
-
-    class CornerPreference {
-        static Default    => 0
-        static DoNotRound => 1
-        static Round      => 2
-        static RoundSmall => 3
-    }
-
-    static Get(Target, AttributeType, Size := 4) {
-        ; TODO method that retrieves Hwnd regardless of type?
-        Hwnd := IsObject(Target) ? Target.Hwnd : Target
-        DllCall("dwmapi\DwmGetWindowAttribute",
-                "Ptr", Hwnd,
-                "Int", AttributeType,
-                "Int*", &(Result := 0),
-                "UInt", Size)
-        return Result
-    }
-
-    static Set(Target, AttributeType, Value, Size := 4) {
-        Hwnd := IsObject(Target) ? Target.Hwnd : Target
-        DllCall("dwmapi\DwmSetWindowAttribute",
-                "Ptr", Hwnd,
-                "Int", AttributeType,
-                "Int*", Value,
-                "UInt", Size)
-        return this ; allows chaining calls together
-    }
-}
-
-class Color extends AquaHotkey_Ignore {
-    static SwapBGR(ColorRGB) {
-        return ((ColorRGB & 0xFF0000) >> 16)
-             | ((ColorRGB & 0x00FF00)      )
-             | ((ColorRGB & 0x0000FF) << 16)
-    }
-}
+#Include "%A_LineFile%/../util/Util.ahk"
 
 ; >>>>
 } ; >>>> class Tanuki extends AquaHotkey
+
+
+class DarkMode {
+    static DarkMode => true
+    static Corners  => "Round"
+}
 
