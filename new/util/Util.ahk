@@ -39,6 +39,74 @@ class Theme extends AquaHotkey_Ignore {
         }
         return false
     }
+
+    ; TODO improve this
+    static Search(Theme, Name) {
+        if (!HasProp(Theme, Name)) {
+            return Theme.Clone()
+        }
+        BaseTheme := Theme.Clone()
+        Theme     := Theme.%Name%.Clone()
+        ObjSetBase(Theme, BaseTheme)
+
+        if (ObjHasOwnProp(Theme, "Font") && ObjHasOwnProp(BaseTheme, "Font")) {
+            Font := Theme.Font.Clone()
+            BaseFont := BaseTheme.Font.Clone()
+            ObjSetBase(Font, BaseFont)
+
+            Theme.DefineProp("Font", { Get: (_) => Font })
+        }
+        return Theme
+    }
+
+    ; TODO move this somewhere else, make it prettier
+    static ApplyFont(GuiObj, Theme) {
+        if (!HasProp(Theme, "Font")) {
+            return
+        }
+        Font := Theme.Font
+        Name := unset
+        Opt  := ""
+
+        if (HasProp(Font, "Name")) {
+            Name := Font.Name
+        }
+        if (HasProp(Font, "Color")) {
+            Opt .= "c" . Font.Color . " "
+        }
+        if (HasProp(Font, "Format")) {
+            Opt .= Font.Format . " "
+        }
+        if (HasProp(Font, "Size")) {
+            Opt .= "s" . Font.Size . " "
+        }
+        if (HasProp(Font, "Weight")) {
+            Opt .= "w" . Font.Weight . " "
+        }
+        if (HasProp(Font, "Quality")) {
+            Quality := ResolveFontQuality(Font.Quality)
+            Opt .= "q" . Quality . " "
+        }
+        GuiObj.SetFont(Opt, Name?)
+
+        static ResolveFontQuality(Quality) {
+            if (IsInteger(Quality)) {
+                return Quality
+            }
+            if (IsObject(Quality)) {
+                throw TypeError("invalid type",, Type(Quality))
+            }
+            switch (StrLower(Quality)) {
+                case "default":        return 0
+                case "draft":          return 1
+                case "proof":          return 2
+                case "nonantialiased": return 3
+                case "antialiased":    return 4
+                case "cleartype":      return 5
+                default: throw ValueError("invalid font quality",, Quality)
+            }
+        }
+    }
 }
 
 ; TODO code gen for this based on a bunch of default methods and constants

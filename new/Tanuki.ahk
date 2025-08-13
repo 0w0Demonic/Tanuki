@@ -270,8 +270,6 @@ class Gui {
                     Tanuki.Dwm.CornerPreference.Value[value])
         }
     }
-
-    #Include "%A_LineFile%/../controls/Controls.ahk"
 }
 
 #Include "%A_LineFile%/../util/Util.ahk"
@@ -280,8 +278,151 @@ class Gui {
 } ; >>>> class Tanuki extends AquaHotkey
 
 
-class DarkMode {
-    static DarkMode => true
-    static Corners  => "Round"
+DarkModeTheme := {
+    DarkMode: true,
+    Corners: "Round",
+
+    Button: {
+        Background: 0x202020,
+        Foreground: 0xE0E0E0,
+
+        Font: {
+            Name: "Consolas"
+        },
+
+        Misc: {
+            Foo: "Bar"
+        }
+    },
+
+    Font: {
+        Size: 12
+    },
+
+    Misc: {
+        Baz: "Qux"
+    }
 }
 
+class ThemeEx {
+    static __New() {
+        if (this == ThemeEx) {
+            return
+        }
+        Seen := Map()
+        Seen.CaseSense := false
+        Seen.Default := false
+
+        Traverse(this, Seen)
+
+        static Traverse(Obj, Seen) {
+            static Define := (Object.Prototype.DefineProp)
+            static Clone  := (Object.Prototype.Clone)
+
+            for Key, Value in ObjOwnProps(Obj) {
+                if (Key == "Prototype") {
+                    continue
+                }
+
+                if (!IsSet(Value) || !IsObject(Value)) {
+                    continue
+                }
+                if (Seen.Has(Key)) {
+                    Base := Seen.Get(Key)
+                    ObjSetBase(Value, Base)
+                    ObjSetBase(Value.Prototype, Base.Prototype)
+                }
+                Seen.Set(Key, Value)
+            }
+
+            for Key, Value in ObjOwnProps(Obj) {
+                if (Key == "Prototype") {
+                    continue
+                }
+                if (!IsSet(Value) || !IsObject(Value)) {
+                    continue
+                }
+                Traverse(Obj.%Key%, Seen.Clone())
+            }
+        }
+    }
+}
+
+class Theme {
+    __New(Obj) {
+        if (!IsObject(Obj)) {
+            throw TypeError("Expected an Object",, Type(Obj))
+        }
+
+        Seen := Map()
+        Seen.CaseSense := false
+        Seen.Default := false
+
+        Result := Object()
+        ObjSetBase(Result, ObjGetBase(Obj))
+        return Traverse(Obj, Result, Seen)
+
+        static Traverse(Obj, Result, Seen) {
+            static Define := (Object.Prototype.DefineProp)
+            static Clone  := (Object.Prototype.Clone)
+
+            for Key, Value in ObjOwnProps(Obj) {
+                if ((Obj is Class) && (Key == "Prototype")) {
+                    continue
+                }
+                if (!IsSet(Value)) {
+                    continue
+                }
+                ClonedValue := (IsObject(Value)) ? Clone(Value) ; shallow clone
+                                                 : Value
+                Define(Result, Key, { Value: ClonedValue })
+
+                if (!IsObject(Value)) {
+                    continue
+                }
+                if (Seen.Has(Key)) {
+                    Base := Seen.Get(Key)
+                    ObjSetBase(ClonedValue, Base)
+                    if ((ClonedValue is Class) && (Base is Class)
+                            && ObjHasOwnProp(ClonedValue, "Prototype")
+                            && ObjHasOwnProp(Base, "Prototype")) {
+                        ObjSetBase(ClonedValue.Prototype, Base.Prototype)
+                    }
+                }
+                Seen.Set(Key, ClonedValue)
+            }
+
+            for Key, Value in ObjOwnProps(Obj) {
+                if ((Obj is Class) && (Key == "Prototype")) {
+                    continue
+                }
+                if (!IsObject(Value)) {
+                    continue
+                }
+                Traverse(Obj.%Key%, Result.%Key%, Seen.Clone())
+            }
+            return Result
+        }
+    }
+}
+
+class DarkMode extends ThemeEx {
+    static DarkMode => true
+    static Corners  => "Round"
+
+    class Button {
+        static Background => 0x202020
+        static Foreground => 0xE0E0E0
+
+        class Misc {
+            static Foo := "Bar"
+        }
+    }
+
+    class Misc {
+        static Baz := "Qux"
+
+        ; non-static
+        Hotel => "Trivago"
+    }
+}
