@@ -277,7 +277,6 @@ class Gui {
 ; >>>>
 } ; >>>> class Tanuki extends AquaHotkey
 
-
 DarkModeTheme := {
     DarkMode: true,
     Corners: "Round",
@@ -304,9 +303,15 @@ DarkModeTheme := {
     }
 }
 
-class ThemeEx {
+/**
+ * 
+ */
+class CascadingClass {
+    static Call(Cls) {
+        (CascadingClass.__New)(Cls)
+    }
     static __New() {
-        if (this == ThemeEx) {
+        if (this == CascadingClass) {
             return
         }
         Seen := Map()
@@ -348,7 +353,10 @@ class ThemeEx {
     }
 }
 
-class Theme {
+/**
+ * 
+ */
+class CascadingObject {
     __New(Obj) {
         if (!IsObject(Obj)) {
             throw TypeError("Expected an Object",, Type(Obj))
@@ -383,11 +391,11 @@ class Theme {
                 if (Seen.Has(Key)) {
                     Base := Seen.Get(Key)
                     ObjSetBase(ClonedValue, Base)
-                    if ((ClonedValue is Class) && (Base is Class)
-                            && ObjHasOwnProp(ClonedValue, "Prototype")
-                            && ObjHasOwnProp(Base, "Prototype")) {
-                        ObjSetBase(ClonedValue.Prototype, Base.Prototype)
-                    }
+                    ; if ((ClonedValue is Class) && (Base is Class)
+                    ;         && ObjHasOwnProp(ClonedValue, "Prototype")
+                    ;         && ObjHasOwnProp(Base, "Prototype")) {
+                    ;     ObjSetBase(ClonedValue.Prototype, Base.Prototype)
+                    ; }
                 }
                 Seen.Set(Key, ClonedValue)
             }
@@ -406,7 +414,7 @@ class Theme {
     }
 }
 
-class DarkMode extends ThemeEx {
+class DarkMode {
     static DarkMode => true
     static Corners  => "Round"
 
@@ -415,12 +423,12 @@ class DarkMode extends ThemeEx {
         static Foreground => 0xE0E0E0
 
         class Misc {
-            static Foo := "Bar"
+            static Foo => "Bar"
         }
     }
 
     class Misc {
-        static Baz := "Qux"
+        static Baz => "Qux"
 
         ; non-static
         Hotel => "Trivago"
