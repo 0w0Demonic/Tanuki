@@ -1,23 +1,23 @@
-/**
- * Adds an edit control to the Gui.
- * 
- * @param   {String?}  Opt  additional options
- * @param   {String?}  Txt  the text to display
- */
+; class Tanuki {
+;     class Gui {
+
 AddEdit(Opt?, Txt?) => this.Add("Edit", Opt?, Txt?)
 
-/**
- * Defines new properties for the `Gui.Edit` class.
- */
 class Edit {
     /**
-     * Applies a theme to the edit control.
-     * @param   {Object}  Theme  the theme to apply
-     * @return  {Object}
+     * 
      */
     ApplyTheme(Theme) {
-        Theme := Tanuki.PrepareSubTheme(Theme, "Edit")
-        Tanuki.ApplyFont(this, Theme)
+        if (!IsObject(Theme)) {
+            throw TypeError("Expected an Object",, Type(Theme))
+        }
+        if (HasProp(Theme, "Edit")) {
+            Theme := Theme.Edit
+        }
+        if (!HasProp(Theme, "FontColor") && HasProp(Theme, "Foreground")) {
+            Theme.FontColor := Theme.Foreground
+        }
+        Tanuki.Theme.ApplyFont(this, Theme)
         if (HasProp(Theme, "DarkMode") && Theme.DarkMode) {
             DllCall("uxtheme\SetWindowTheme",
                     "Ptr", this.Hwnd,
@@ -38,7 +38,9 @@ class Edit {
      */
     Selection => Gui.Edit.Selection(this)
 
-    /** An object used for the selection of an edit control. */
+    /**
+     * An object used for the selection of an edit control.
+     */
     class Selection {
         /**
          * Constructs a new Gui.Edit.Selection object.
@@ -46,10 +48,10 @@ class Edit {
          * @param   {Gui.Edit}  EditControl  the edit control to manage
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
+            if (!(EditControl is Gui.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", { Get: (Instance) => EditControl })
+            this.DefineProp("Edit", { Get: (_) => EditControl })
         }
 
         /**
@@ -135,14 +137,18 @@ class Edit {
             return this
         }
 
-        /** Deselects all text in the edit control. */
+        /**
+         * Deselects all text in the edit control.
+         */
         Clear() {
             static EM_SETSEL := 0x00B1
             SendMessage(EM_SETSEL, -1, -1, this)
             return this
         }
 
-        /** Selects all text in the edit control. */
+        /**
+         * Selects all text in the edit control.
+         */
         All() {
             SendMessage(EM_SETSEL := 0x00B1, 0, -1, this)
         }
@@ -269,10 +275,10 @@ class Edit {
          * @param   {Gui.Edit}  EditControl  the edit control to manage
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
+            if (!(EditControl is Gui.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", { Get: (Instance) => EditControl })
+            this.DefineProp("Edit", { Get: (_) => EditControl })
         }
 
         /**
@@ -676,10 +682,10 @@ class Edit {
          * @param   {Gui.Edit}  EditControl  the edit control to manage
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
+            if (!(EditControl is Gui.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", { Get: (Instance) => EditControl })
+            this.DefineProp("Edit", { Get: (_) => EditControl })
         }
 
         /**
@@ -795,10 +801,10 @@ class Edit {
          * @param   {Gui.Edit}  EditControl  the edit to be aligned
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
+            if (!(EditControl is Gui.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", { Get: (Instance) => EditControl })
+            this.DefineProp("Edit", { Get: (_) => EditControl })
         }
 
         /** Aligns the text on the left. */
@@ -919,10 +925,10 @@ class Edit {
          * @return  {Gui.Edit.BalloonTip}
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
+            if (!(EditControl is Gui.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", { Get: (Instance) => EditControl })
+            this.DefineProp("Edit", { Get: (_) => EditControl })
         }
 
         /**
@@ -1046,10 +1052,10 @@ class Edit {
          * @param   {Gui.Edit}  EditControl  the edit control to manage
          */
         __New(EditControl) {
-            if (!(EditControl is Gui.Edit) && !(EditControl is GuiProxy.Edit)) {
+            if (!(EditControl is Gui.Edit)) {
                 throw TypeError("Expected a Gui.Edit",, Type(EditControl))
             }
-            this.DefineProp("Edit", { Get: (Instance) => EditControl })
+            this.DefineProp("Edit", { Get: (_) => EditControl })
         }
         
         /**
@@ -1076,3 +1082,6 @@ class Edit {
         }
     }
 }
+
+;     }
+; }

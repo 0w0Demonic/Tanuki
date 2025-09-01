@@ -1,3 +1,8 @@
+; class Tanuki {
+;     class Gui {
+
+AddText(Opt?, Txt?) => this.Add("Txt", Opt?, Txt?)
+
 /**
  * 
  */
@@ -51,3 +56,6 @@ class Text {
         static EllipsisMask     => 0xC000
     }
 }
+
+;     }
+; }

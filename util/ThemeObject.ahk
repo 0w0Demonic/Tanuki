@@ -8,51 +8,51 @@
  * Objects inside this structure fall back to their enclosing objects.
  * 
  * @example
- * Theme := {
+ * ThemeObj := ThemeObject({
  *     Button: {
  *         font_size: 12
  *     },
  *     font_name: "Cascadia Code" ; pun not intended
- * }
+ * })
  * 
- * MsgBox(Theme.Button.font_size) ; 12
- * MsgBox(Theme.Button.font_name) ; "Cascadia Code"
+ * MsgBox(ThemeObj.Button.font_size) ; 12
+ * MsgBox(ThemeObj.Button.font_name) ; "Cascadia Code"
  * 
  * @description
  * You can create a cascading object by:
- * - {@link Cascade.Transform transforming an object}
- * - {@link Cascade.Create creating a deep clone of an object}
+ * - {@link ThemeObject.Transform transforming an object}
+ * - {@link ThemeObject.Create creating a deep clone of an object}
  * 
  * @example
- * Theme := { ... }
+ * ThemeObj := { ... }
  * 
- * Obj := Cascade.Create(Theme) ; create a clone
- * Cascade.Transform(Theme)     ; change in place
+ * Obj := ThemeObject.Create(ThemeObj) ; create a clone
+ * ThemeObject.Transform(Theme)        ; change in place
  * 
  * @description
- * You can create cascades of classes by using the `ClassCascade` subtype.
+ * You can create cascades of classes by using the `ThemeClass` subtype.
  * It additionally overrides the prototypes of each class to be connected.
  * 
- * Using `ClassCascade` as base class will automatically call `.Transform()` to
+ * Using `ThemeClass` as base class will automatically call `.Transform()` to
  * enable cascading behavior. As an alternative, you can use
- * `ClassCascade.Transform(Cls)` or `ClassCascade.Create(Cls)` instead.
+ * `ThemeClass.Transform(Cls)` or `ThemeClass.Create(Cls)` instead.
  * 
  * @example
  * ; class is automatically `.Transform()`-ed when loaded
- * class Theme extends ClassCascade {
+ * class MyThemeObject extends ThemeClass {
  *     class Button {
  *         font_name => "Cascadia Code"
  *     }
  *     font_size => 12
  * }
  * 
- * ButtonTheme := Theme.Button()
+ * ButtonThemeObject := MyTheme.Button()
  * MsgBox(ButtonTheme.font_name) ; "Cascadia Code"
  * MsgBox(ButtonTheme.font_size) ; 12
  * 
  * @author 0w0Demonic
  */
-class Cascade {
+class ThemeObject {
     /**
      * Standard constructor that defaults to `.Transform()`.
      * 
@@ -71,7 +71,7 @@ class Cascade {
         if (!IsObject(Obj)) {
             throw TypeError("Expected an Object",, Type(Obj))
         }
-        AsClass := (this == ClassCascade || HasBase(this, ClassCascade))
+        AsClass := (this == ThemeClass || HasBase(this, ThemeClass))
         if (AsClass && !(Obj is Class)) {
             throw TypeError("Expected a Class",, Type(Obj))
         }
@@ -118,13 +118,13 @@ class Cascade {
             throw TypeError("Expected an Object",, Type(Obj))
         }
 
-        AsClass := (this == ClassCascade) || HasBase(this, ClassCascade)
+        AsClass := (this == ThemeClass) || HasBase(this, ThemeClass)
         if (AsClass && !(Obj is Class)) {
             throw TypeError("Expected a Class",, Type(Obj))
         }
 
         Result := Object()
-        ObjSetBase(Result, Cascade.Prototype)
+        ObjSetBase(Result, ThemeObject.Prototype)
         Traverse(Obj, Result, AsClass)
         return Result
 
@@ -163,19 +163,19 @@ class Cascade {
 }
 
 /**
- * A variant of {@link Cascade} designed for classes.
+ * A variant of {@link ThemeObject} designed for classes.
  * 
- * `ClassCascade` allows entire classes to support cascading behavior,
+ * `ThemeClass` allows entire classes to support cascading behavior,
  * including their prototypes.
  * 
- * Using `ClassCascade` as base class automatically enables cascading by
+ * Using `ThemeClass` as base class automatically enables cascading by
  * applying `.Transform()` to itself. Alternatively, you can use either
- * `ClassCascade.Transform(Cls)` or `ClassCascade.Create(Cls)`.
+ * `ThemeClass.Transform(Cls)` or `ThemeClass.Create(Cls)`.
  */
-class ClassCascade {
+class ThemeClass {
     static __New() {
-        if (this != ClassCascade) {
-            Cascade.Transform(this)
+        if (this != ThemeClass) {
+            ThemeObject.Transform(this)
             ObjSetBase(this, Object)
         }
     }

@@ -73,6 +73,8 @@ class GuiOld extends AquaHotkey_Backup {
  * Defines all property and method extensions added to the `Gui` class.
  */
 class Gui {
+#Include "%A_LineFile%/../controls/Control.ahk"
+#Include "%A_LineFile%/../controls/Edit.ahk"
     /**
      * New, overridden GUI constructor with additional `Theme`-option.
      * 
@@ -155,13 +157,11 @@ class Gui {
             if (HasProp(Theme, "Background")) {
                 this.BackColor := Theme.Background
             }
-            if (HasProp(Theme, "Title")) {
-                if (HasProp(Theme.Title, "Background")) {
-                    this.TitleColor := Theme.Title.Color
-                }
-                if (HasProp(Theme.Title, "Foreground")) {
-                    this.TitleTextColor := Theme.Title.Foreground
-                }
+            if (HasProp(Theme, "TitleColor")) {
+                this.TitleColor := Theme.TitleColor
+            }
+            if (HasProp(Theme, "TitleTextColor")) {
+                this.TitleTextColor := Theme.TitleTextColor
             }
             ; TODO add more dwm stuff
 
@@ -279,12 +279,15 @@ class DarkMode extends ClassCascade {
     static DarkMode => true
     static Corners => "Round"
 
-    class Button {
+    class Edit {
         static Background => 0x202020
         static Foreground => 0xE0E0E0
+
+        static FontName => "Cascadia Code"
     }
 }
 
 G := Gui("Theme:DarkMode")
 G.AddEdit("r1 w350")
 G.Show()
+G.OnEvent("Escape", (*) => ExitApp())

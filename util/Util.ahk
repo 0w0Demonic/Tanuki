@@ -1,30 +1,31 @@
 ; class Tanuki {
 
-/**
- * Utility class used for handling and parsing theme objects.
- */
 class Theme extends AquaHotkey_Ignore {
-    ; TODO
     static Load(Theme) {
-        if (!IsObject(Theme)) {
-            try {
-                Theme := (Theme != "a" ? Deref1(Theme) : Deref2(Theme))
-            } catch {
-                throw UnsetError("Theme not found",, Type(Theme))
-            }
+        if (IsObject(Theme)) {
+            return Theme
+        }
+        if (FileExist(Theme)) {
+            ; TODO
+            throw Error("Not yet implemented")
+        }
+        try {
+            Theme := (Theme != "a" ? Deref1(Theme) : Deref2(Theme))
+        } catch {
+            throw UnsetError("Theme not found",, Type(Theme))
         }
         if (!IsObject(Theme)) {
             throw TypeError("Expected an Object",, Type(Theme))
         }
+
         return Theme
 
         static Deref1(a) => %a%
         static Deref2(b) => %b%
     }
 
-    ; TODO
     static Parse(&OptionStr, &Theme) {
-        static Pattern := "Theme: ( \S++ )"
+        static Pattern := "ix) Theme: ( \S++ )"
         ; static Pattern := "
         ; (
         ; ix)
@@ -70,11 +71,11 @@ class Theme extends AquaHotkey_Ignore {
         Opt  := ""
 
         if (HasProp(Theme, "FontName")) {
-            Name := Theme.Name
+            Name := Theme.FontName
         }
         if (HasProp(Theme, "FontColor")) {
             ; TODO support numbers directly using `Format()`
-            Opt .= "c" . Theme.Color . " "
+            Opt .= "c" . Theme.FontColor . " "
         }
         if (HasProp(Theme, "FontFormat")) {
             Opt .= Theme.FontFormat . " "
@@ -93,7 +94,7 @@ class Theme extends AquaHotkey_Ignore {
 
         static ResolveFontQuality(Quality) {
             if (IsInteger(Quality)) {
-                return Quality
+                return Integer(Quality)
             }
             if (IsObject(Quality)) {
                 throw TypeError("invalid type",, Type(Quality))
@@ -111,7 +112,8 @@ class Theme extends AquaHotkey_Ignore {
     }
 }
 
-; TODO code gen for this based on a bunch of default methods and constants
+; TODO add more stuff here
+; class Tanuki {
 /**
  * Utility class for the Desktop Window Manager API.
  */
@@ -133,7 +135,11 @@ class Dwm extends AquaHotkey_Ignore {
     }
 
     /** Represents the DWM corner rounding preference enum. */
-    class CornerPreference extends Tanuki.Enum {
+    class CornerPreference {
+        static __New() {
+            EnumClass.Transform(this)
+        }
+
         static Default    => 0
         static DoNotRound => 1
         static Round      => 2
@@ -188,63 +194,5 @@ class Dwm extends AquaHotkey_Ignore {
         }
         return this ; allows chaining calls together
     }
-}
-
-/**
- * Utility that generates useful methods for classes that are meant to be
- * used as enums.
- */
-class Enum extends AquaHotkey_Ignore {
-    /**
-     * Static init. Adds all read-only static members of the class into two
-     * maps `Name` and `Value`, which return the name or value of the enum
-     * member.
-     */
-    static __New() {
-        static GetOwnPropDesc := (Object.Prototype.GetOwnPropDesc)
-        static Define := (Object.Prototype.DefineProp)
-
-        if (this == Tanuki.Enum) {
-            return
-        }
-
-        Names := Map()
-        Values := Map()
-        Names.CaseSense := false
-        Values.CaseSense := false
-
-        for Name in ObjOwnProps(this) {
-            PropDesc := GetOwnPropDesc(this, Name)
-            if (ObjOwnPropCount(PropDesc) != 1) {
-                continue
-            }
-            if (!ObjHasOwnProp(PropDesc, "Get")) {
-                continue
-            }
-
-            Value := (PropDesc.Get)(this)
-            Values.Set(Name, Value)
-            Values.Set(Value, Value)
-            Names.Set(Name, Name)
-            Names.Set(Value, Name)
-        }
-
-        Define(this, "Value", { Get: (_, Key) => Values.Get(Key) })
-        Define(this, "Name",  { Get: (_, Key) => Names.Get(Key)  })
-    }
-}
-
-/**
- * 
- */
-class Color extends AquaHotkey_Ignore {
-    static SwapRB(ColorRGB) {
-        return ((ColorRGB & 0xFF0000) >> 16)
-             | ((ColorRGB & 0x00FF00)      )
-             | ((ColorRGB & 0x0000FF) << 16)
-    }
-
-    ; TODO Brighter / Darker
-}
-
+} ; class Dwm
 ; } class Tanuki
