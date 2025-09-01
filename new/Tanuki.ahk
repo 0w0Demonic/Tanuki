@@ -2,7 +2,9 @@
 
 ; https://www.github.com/0w0Demonic/AquaHotkey
 #Include <AquaHotkeyX>
-; #Include "%A_LineFile%/../themes/theme_catppuccin.ahk"
+
+; used for theme objects
+#Include "./util/Cascade.ahk"
 
 #DllLoad "uxtheme.dll"
 #DllLoad "dwmapi.dll"
@@ -78,20 +80,18 @@ class Gui {
      * 
      * @example
      * g := Gui("Theme:Dark")
-     * g := Gui("Theme:'C:\Users\...\Desktop\theme.json'")
      * 
      * @param   {String?}  
      * @param   {String?}
      * @param   {Object}
      */
     __New(Opt := "", Title?, EventObj?) {
-        ; old `__New()` method
-        static __New := Tanuki.GuiOld.Prototype.__New
+        Tanuki.Theme.Parse(&Opt, &Theme)
 
-        HasTheme := Tanuki.Theme.Parse(&Opt, &Theme)
-        __New(this, Opt, Title?, EventObj?)
+        ; call old `__New()` method
+        (Tanuki.GuiOld.Prototype.__New)(this, Opt, Title?, EventObj?)
 
-        if (HasTheme) {
+        if (Theme) {
             this.Theme := Theme
         }
     }
@@ -106,13 +106,10 @@ class Gui {
      * @param   {String}  OptionStr  zero or more options and styles
      */
     Opt(OptionStr) {
-        ; old `.Opt()` method
-        static Opt := Tanuki.GuiOld.Prototype.Opt
-
-        HasTheme := Tanuki.Theme.Parse(&Opt, &Theme)
-        Opt(this, OptionStr)
-
-        if (HasTheme) {
+        Tanuki.Theme.Parse(&OptionStr, &Theme)
+        ; call old `.Opt()` method
+        (Tanuki.GuiOld.Prototype.Opt)(this, OptionStr)
+        if (Theme) {
             this.Theme := Theme
         }
     }
@@ -126,23 +123,24 @@ class Gui {
      * @return  {Gui.Control}
      */
     Add(ControlType, Opt := "", Txt?) {
-        static Add := Tanuki.GuiOld.Prototype.Add ; old `.Add()` method
+        ; call old `.Add()` method
+        Ctl := (Tanuki.GuiOld.Prototype.Add)(this, ControlType, Opt, Txt?)
 
-        Ctl := Add(this, ControlType, Opt, Txt?)
+        ; TODO this (kinda) sucks
         Theme := this.Theme
         if (!ObjOwnPropCount(Theme := this.Theme)) {
             Theme := ObjGetBase(Ctl).Theme
         }
+
         Ctl.ApplyTheme(Theme)
         return Ctl
     }
 
     /**
-     * Retrieves or applies a theme to the Gui. Valid arguments are...
+     * Retrieves or applies a theme to the Gui.
      * 
-     * 1. Any object
-     * 2. The name of a global object (e.g., a class that resembles a theme)
-     * 3. File path to a JSON that contains a theme
+     * @param   {Object}  Value  the theme to be applied
+     * @return  {Object}
      */
     Theme {
         get {
@@ -277,160 +275,16 @@ class Gui {
 ; >>>>
 } ; >>>> class Tanuki extends AquaHotkey
 
-DarkModeTheme := {
-    DarkMode: true,
-    Corners: "Round",
-
-    Button: {
-        Background: 0x202020,
-        Foreground: 0xE0E0E0,
-
-        Font: {
-            Name: "Consolas"
-        },
-
-        Misc: {
-            Foo: "Bar"
-        }
-    },
-
-    Font: {
-        Size: 12
-    },
-
-    Misc: {
-        Baz: "Qux"
-    }
-}
-
-/**
- * 
- */
-class CascadingClass {
-    static Call(Cls) {
-        (CascadingClass.__New)(Cls)
-    }
-    static __New() {
-        if (this == CascadingClass) {
-            return
-        }
-        Seen := Map()
-        Seen.CaseSense := false
-        Seen.Default := false
-
-        Traverse(this, Seen)
-
-        static Traverse(Obj, Seen) {
-            static Define := (Object.Prototype.DefineProp)
-            static Clone  := (Object.Prototype.Clone)
-
-            for Key, Value in ObjOwnProps(Obj) {
-                if (Key == "Prototype") {
-                    continue
-                }
-
-                if (!IsSet(Value) || !IsObject(Value)) {
-                    continue
-                }
-                if (Seen.Has(Key)) {
-                    Base := Seen.Get(Key)
-                    ObjSetBase(Value, Base)
-                    ObjSetBase(Value.Prototype, Base.Prototype)
-                }
-                Seen.Set(Key, Value)
-            }
-
-            for Key, Value in ObjOwnProps(Obj) {
-                if (Key == "Prototype") {
-                    continue
-                }
-                if (!IsSet(Value) || !IsObject(Value)) {
-                    continue
-                }
-                Traverse(Obj.%Key%, Seen.Clone())
-            }
-        }
-    }
-}
-
-/**
- * 
- */
-class CascadingObject {
-    __New(Obj) {
-        if (!IsObject(Obj)) {
-            throw TypeError("Expected an Object",, Type(Obj))
-        }
-
-        Seen := Map()
-        Seen.CaseSense := false
-        Seen.Default := false
-
-        Result := Object()
-        ObjSetBase(Result, ObjGetBase(Obj))
-        return Traverse(Obj, Result, Seen)
-
-        static Traverse(Obj, Result, Seen) {
-            static Define := (Object.Prototype.DefineProp)
-            static Clone  := (Object.Prototype.Clone)
-
-            for Key, Value in ObjOwnProps(Obj) {
-                if ((Obj is Class) && (Key == "Prototype")) {
-                    continue
-                }
-                if (!IsSet(Value)) {
-                    continue
-                }
-                ClonedValue := (IsObject(Value)) ? Clone(Value) ; shallow clone
-                                                 : Value
-                Define(Result, Key, { Value: ClonedValue })
-
-                if (!IsObject(Value)) {
-                    continue
-                }
-                if (Seen.Has(Key)) {
-                    Base := Seen.Get(Key)
-                    ObjSetBase(ClonedValue, Base)
-                    ; if ((ClonedValue is Class) && (Base is Class)
-                    ;         && ObjHasOwnProp(ClonedValue, "Prototype")
-                    ;         && ObjHasOwnProp(Base, "Prototype")) {
-                    ;     ObjSetBase(ClonedValue.Prototype, Base.Prototype)
-                    ; }
-                }
-                Seen.Set(Key, ClonedValue)
-            }
-
-            for Key, Value in ObjOwnProps(Obj) {
-                if ((Obj is Class) && (Key == "Prototype")) {
-                    continue
-                }
-                if (!IsObject(Value)) {
-                    continue
-                }
-                Traverse(Obj.%Key%, Result.%Key%, Seen.Clone())
-            }
-            return Result
-        }
-    }
-}
-
-class DarkMode {
+class DarkMode extends ClassCascade {
     static DarkMode => true
-    static Corners  => "Round"
+    static Corners => "Round"
 
     class Button {
         static Background => 0x202020
         static Foreground => 0xE0E0E0
-
-        class Misc {
-            static Foo => "Bar"
-        }
-    }
-
-    class Misc {
-        static Baz => "Qux"
-
-        ; non-static
-        Hotel => "Trivago"
     }
 }
+
+G := Gui("Theme:DarkMode")
+G.AddEdit("r1 w350")
+G.Show()

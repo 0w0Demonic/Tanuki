@@ -6,30 +6,32 @@
 class Theme extends AquaHotkey_Ignore {
     ; TODO
     static Load(Theme) {
-        if (IsObject(Theme)) {
-            return Theme
+        if (!IsObject(Theme)) {
+            try {
+                Theme := (Theme != "a" ? Deref1(Theme) : Deref2(Theme))
+            } catch {
+                throw UnsetError("Theme not found",, Type(Theme))
+            }
         }
+        if (!IsObject(Theme)) {
+            throw TypeError("Expected an Object",, Type(Theme))
+        }
+        return Theme
 
         static Deref1(a) => %a%
         static Deref2(b) => %b%
-
-        try return (Theme != "a" ? Deref1(Theme) : Deref2(Theme))
-
-        if (!FileExist(Theme)) {
-            throw TargetError("Unable to find Gui theme",, Theme)
-        }
-        ; TODO get a JSON lib somewhere
     }
 
     ; TODO
     static Parse(&OptionStr, &Theme) {
-        static Pattern := "
-        (
-        ix)
-        Theme: ( " [^"]++ "
-               | ' [^']++ '
-               |     \S++ )
-        )"
+        static Pattern := "Theme: ( \S++ )"
+        ; static Pattern := "
+        ; (
+        ; ix)
+        ; Theme: ( " [^"]++ " # file path enclosed in "
+        ;        | ' [^']++ ' # file path enclosed in '
+        ;        |     \S++ ) # any existing (global) theme object
+        ; )"
         if (RegExMatch(OptionStr, Pattern, &Match)) {
             Theme  := Match[1]
             Before := SubStr(OptionStr, 1, Match.Pos[0] - 1)
@@ -37,54 +39,54 @@ class Theme extends AquaHotkey_Ignore {
             OptionStr := Before . After
             return true
         }
+        Theme := false
         return false
     }
 
-    ; TODO improve this
-    static Search(Theme, Name) {
-        if (!HasProp(Theme, Name)) {
-            return Theme.Clone()
-        }
-        BaseTheme := Theme.Clone()
-        Theme     := Theme.%Name%.Clone()
-        ObjSetBase(Theme, BaseTheme)
-
-        if (ObjHasOwnProp(Theme, "Font") && ObjHasOwnProp(BaseTheme, "Font")) {
-            Font := Theme.Font.Clone()
-            BaseFont := BaseTheme.Font.Clone()
-            ObjSetBase(Font, BaseFont)
-
-            Theme.DefineProp("Font", { Get: (_) => Font })
-        }
-        return Theme
-    }
-
     ; TODO move this somewhere else, make it prettier
+    /**
+     * Applies a font represented as object to the targeted GUI or GUI
+     * control.
+     * 
+     * Fields:
+     * - `FontName`
+     * - `FontColor`
+     * - `FontFormat`
+     * - `FontSize`
+     * - `FontWeight`
+     * - `FontQuality`
+     * 
+     * The `FontQuality` field additionally supports verbose values:
+     * 
+     * - `Default`
+     * - `Draft`
+     * - `Proof`
+     * - `NonAntiAliased`
+     * - `AntiAliased`
+     * - `ClearType`
+     */
     static ApplyFont(GuiObj, Theme) {
-        if (!HasProp(Theme, "Font")) {
-            return
-        }
-        Font := Theme.Font
         Name := unset
         Opt  := ""
 
-        if (HasProp(Font, "Name")) {
-            Name := Font.Name
+        if (HasProp(Theme, "FontName")) {
+            Name := Theme.Name
         }
-        if (HasProp(Font, "Color")) {
-            Opt .= "c" . Font.Color . " "
+        if (HasProp(Theme, "FontColor")) {
+            ; TODO support numbers directly using `Format()`
+            Opt .= "c" . Theme.Color . " "
         }
-        if (HasProp(Font, "Format")) {
-            Opt .= Font.Format . " "
+        if (HasProp(Theme, "FontFormat")) {
+            Opt .= Theme.FontFormat . " "
         }
-        if (HasProp(Font, "Size")) {
-            Opt .= "s" . Font.Size . " "
+        if (HasProp(Theme, "FontSize")) {
+            Opt .= "s" . Theme.FontSize . " "
         }
-        if (HasProp(Font, "Weight")) {
-            Opt .= "w" . Font.Weight . " "
+        if (HasProp(Theme, "FontWeight")) {
+            Opt .= "w" . Theme.FontWeight . " "
         }
-        if (HasProp(Font, "Quality")) {
-            Quality := ResolveFontQuality(Font.Quality)
+        if (HasProp(Theme, "FontQuality")) {
+            Quality := ResolveFontQuality(Theme.FontQuality)
             Opt .= "q" . Quality . " "
         }
         GuiObj.SetFont(Opt, Name?)
