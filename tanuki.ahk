@@ -1,11 +1,15 @@
-#Requires AutoHotkey >=v2.0.5
+#Requires AutoHotkey >=v2.1-alpha.10
 
 ; https://www.github.com/0w0Demonic/AquaHotkey
-#Include <AquaHotkey>
+#Include "%A_LineFile%/../lib/AquaHotkey.ahk"
+#Include "%A_LineFile%/../lib/AquaHotkey_Backup.ahk"
+#Include "%A_LineFile%/../lib/AquaHotkey_Ignore.ahk"
+#Include "%A_LineFile%/../lib/AquaHotkey_MultiApply.ahk"
+
 #Include "%A_LineFile%/../util/ThemeObject.ahk"
 
-#DllLoad  "uxtheme.dll"
-#DllLoad  "dwmapi.dll"
+#DllLoad "uxtheme.dll"
+#DllLoad "dwmapi.dll"
 
 /**
  * ```
@@ -69,11 +73,6 @@ class GuiOld extends AquaHotkey_Backup {
  * Defines new properties and methods added to the built-in `Gui` type.
  */
 class Gui {
-    /**
-     * Nested class that holds utility for GUI events.
-     */
-    #Include "%A_LineFile%/../Event.ahk"
-
     /**
      * Constructs a new Gui, optionally applying a theme given in the form
      * of a class name or file path to a JSON.
@@ -152,8 +151,6 @@ class Gui {
 
 
     /**
-     * ; TODO allow nested objects
-     * 
      * Applies a theme to the Gui. Valid arguments include
      * 1. Any object
      * 2. The name of an object at global scope (preferably a class object)
@@ -188,9 +185,7 @@ class Gui {
                 GuiControl.ApplyTheme(Theme)
             }
 
-            this.DefineProp("Theme", {
-                Get: (Instance) => Theme.Clone()
-            })
+            this.DefineProp("Theme", { Get: (_) => Theme.Clone() })
         }
     }
 
@@ -284,6 +279,7 @@ class Gui {
     }
 
     #Include "%A_LineFile%/../controls/ALL_CONTROLS.ahk"
+
     #Include "%A_LineFile%/../util/Util.ahk"
 } ; class Gui
 } ; class Tanuki
@@ -294,3 +290,5 @@ class Gui {
 #Include "%A_LineFile%/../Box.ahk"
 #Include "%A_LineFile%/../Gdi.ahk"
 #Include "%A_LineFile%/../util.ahk"
+
+#Include "%A_LineFile%/../util/GuiEvent.ahk"
