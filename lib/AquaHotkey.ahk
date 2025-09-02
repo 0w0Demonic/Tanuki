@@ -1,5 +1,8 @@
 #Requires AutoHotkey >=v2.0.5
 
+#Include "%A_LineFile%/../AquaHotkey_Backup.ahk"
+#Include "%A_LineFile%/../AquaHotkey_Ignore.ahk"
+#Include "%A_LineFile%/../AquaHotkey_MultiApply.ahk"
 /**
  * AquaHotkey - AquaHotkey.ahk
  * 
@@ -96,6 +99,16 @@ static __New() {
     static DeletionQueue := Array()
 
     /**
+     * Outputs useful information to the debugger.
+     * 
+     * @param   {String}  FormatStr  format string used by `Format()`
+     * @param   {Any*}    Args       zero or more arguments
+     */
+    static Debug(FormatStr, Args*) {
+        OutputDebug("[Aqua] " . Format(FormatStr, Args*))
+    }
+
+    /**
      * Main method responsible for transferring properties.
      * 
      * @param   {Class}   RootClass      class that encloses property supplier
@@ -116,7 +129,7 @@ static __New() {
 
         ; ignore classes that extend `AquaHotkey_Ignore`
         if (HasBase(Supplier, AquaHotkey_Ignore)) {
-            OutputDebug("[Aqua] ignoring: " . Supplier.Prototype.__Class)
+            Debug("ignoring: {1}", Supplier.Prototype.__Class)
             return
         }
         
@@ -152,8 +165,7 @@ static __New() {
                 ReceiverName := Receiver.Prototype.__Class
             }
 
-            FormatString := "[Aqua] {1:-40} -> {2}"
-            OutputDebug(Format(FormatString, SupplierName, ReceiverName))
+            Debug("{1:-40} -> {2}", SupplierName, ReceiverName)
         }
         catch
         {
@@ -212,12 +224,27 @@ static __New() {
             Define(ReceiverProto, "__Init", { Call: __Init })
         }
 
-        ; Remove special properties in the supplier class before starting to
-        ; transfer properties.
-        Delete(Supplier,      "Prototype")
-        Delete(Supplier,      "__Init")
-        Delete(SupplierProto, "__Init")
-        Delete(SupplierProto, "__Class")
+        /**
+         * Enumerates all properties of the targeted object, with the option to
+         * exclude zero or more properties.
+         * 
+         * @param   {Object}   Target         any object
+         * @param   {String*}  ExcludedProps  properties to be ignored
+         * @return  {Array<String>}
+         */
+        static GetProps(Target, ExcludedProps*) {
+            Props := Map()
+            Props.CaseSense := false
+            for PropertyName in ObjOwnProps(Target) {
+                Props.Set(PropertyName, true)
+            }
+            for ExcludedProp in ExcludedProps {
+                if (Props.Has(ExcludedProp)) {
+                    Props.Delete(ExcludedProp)
+                }
+            }
+            return Props
+        }
 
         ; Checks if the property is a nested class that should be recursed into.
         ; e.g. `AquaHotkey.Gui`              | `Gui`
@@ -229,7 +256,7 @@ static __New() {
         }
 
         ; Transfer all static properties
-        for PropertyName in ObjOwnProps(Supplier) {
+        for PropertyName in GetProps(Supplier, "Prototype", "__Init") {
             ; use an if-statement instead of `Delete(Supplier, "__New")` so you
             ; can call `static __New()` a second time, if you ever need to.
             if (PropertyName = "__New") {
@@ -247,14 +274,15 @@ static __New() {
         }
         
         ; Transfer all non-static properties
-        for PropertyName in ObjOwnProps(SupplierProto) {
+        for PropertyName in GetProps(SupplierProto, "__Init", "__Class") {
             PropDesc := SupplierProto.GetOwnPropDesc(PropertyName)
             Define(ReceiverProto, PropertyName, PropDesc)
         }
     }
     
-    FormatString := "`n[Aqua] ######## Extension Class: {1} ########`n"
-    OutputDebug(Format(FormatString, this.Prototype.__Class))
+    Debug("")
+    Debug("######## Extension Class: {1} ########", this.Prototype.__Class)
+    Debug("")
 
     ; Iterate and call `Overwrite()` on every property of the current class.
     for PropertyName in ObjOwnProps(this) {

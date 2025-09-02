@@ -2,10 +2,6 @@
 
 ; https://www.github.com/0w0Demonic/AquaHotkey
 #Include "%A_LineFile%/../lib/AquaHotkey.ahk"
-#Include "%A_LineFile%/../lib/AquaHotkey_Backup.ahk"
-#Include "%A_LineFile%/../lib/AquaHotkey_Ignore.ahk"
-#Include "%A_LineFile%/../lib/AquaHotkey_MultiApply.ahk"
-
 #Include "%A_LineFile%/../util/ThemeObject.ahk"
 
 #DllLoad "uxtheme.dll"
