@@ -20,6 +20,7 @@
 #Include "%A_LineFile%/../ListView.ahk"
 #Include "%A_LineFile%/../ListBox.ahk"
 #Include "%A_LineFile%/../MonthCal.ahk"
+#Include "%A_LineFile%/../Pic.ahk"
 #Include "%A_LineFile%/../ProgressBar.ahk"
 #Include "%A_LineFile%/../Slider.ahk"
 #Include "%A_LineFile%/../DateTime.ahk"

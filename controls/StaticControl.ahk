@@ -1,7 +1,7 @@
 
 class StaticControl extends AquaHotkey_MultiApply {
     static __New() => super.__New(Tanuki.Gui.Text,
-                                  Tanuki.Gui.Picture)
+                                  Tanuki.Gui.Pic)
     
     OnClick(Callback, AddRemove?) {
         static STN_CLICKED := 0x0000
