@@ -3,7 +3,7 @@
  * used as enums.
  */
 class EnumClass {
-    static Transform(Target) {
+    static Call(Target) {
         static GetOwnPropDesc := (Object.Prototype.GetOwnPropDesc)
         static Define := (Object.Prototype.DefineProp)
         if (!(Target is Class)) {
