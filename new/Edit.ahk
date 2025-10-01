@@ -110,7 +110,7 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
          * Returns the character length of the current selection
          * @returns {Integer}
          */
-        Length => (this.End - this.Start)
+        Length => (this.End - this.Start + 1)
 
         /**
          * Returns the currently selected text.
@@ -330,6 +330,23 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
             get => EditGetCurrentCol(this.Edit)
             set => this.Move(this.Line, value)
         }
+
+        /**
+         * Gets the index of the caret or moves it to the specified position.
+         * 
+         * @param   {Integer}  value  1-based index to move caret to
+         * @returns {Integer}
+         */
+        Index {
+            get {
+                Msg := Controls.EM_GETCARETINDEX
+                return SendMessage(Msg, 0, 0, this.Edit) + 1
+            }
+            set {
+                Msg := Controls.EM_SETCARETINDEX
+                return SendMessage(Msg, value - 1, 0, this.Edit)
+            }
+        }
     }
     ;@endregion
 
@@ -348,6 +365,20 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
         Result := SendMessage(Controls.EM_CHARFROMPOS, 0, Coords, this)
         Index  := (Result & 0xFFFF) + 1
         Line   := ((Result >>> 16) & 0xFFFF) + 1
+    }
+
+    /**
+     * Retrieves the client are coordinates of a specified character in the
+     * edit control.
+     * 
+     * @param   {Integer}          Index  1-based index of the character
+     * @param   {VarRef<Integer>}  x      [out] client x
+     * @param   {VarRef<Integer>}  y      [out] client y
+     */
+    PosFromChar(Index, &x, &y) {
+        Coords := SendMessage(Controls.EM_POSFROMCHAR, Index - 1, 0, this)
+        x := Coords & 0xFFFF
+        y := (Coords >>> 16) & 0xFFFF
     }
 
     /**
@@ -551,7 +582,6 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
     GetCue(MaxCap := 128) {
         Buf := Buffer(Max(64, MaxCap), 0)
         SendMessage(Controls.EM_GETCUEBANNER, Buf.Ptr, Buf.Size, this)
-        ; TODO encoding correct?
         return StrGet(Buf, "UTF-16")
     }
 
@@ -670,14 +700,6 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
     }
 
     /**
-     * Gets the position of the scroll box (thumb) in the vertical scroll bar
-     * of a multiline edit control.
-     * 
-     * @returns {Integer}
-     */
-    Thumb => SendMessage(Controls.EM_GETTHUMB, 0, 0, this)
-
-    /**
      * Gets or sets the current word wrap function.
      * 
      * ```
@@ -691,11 +713,91 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
         get => SendMessage(Controls.EM_GETWORDBREAKPROC, 0, 0, this)
         set => SendMessage(Controls.EM_SETWORDBREAKPROC, 0, value, this)
     }
+
+    /**
+     * @param   {EDIT_CONTROL_FEATURE}  Feat  the value to enable
+     */
+    EnableFeature(Feat) {
+        SendMessage(Controls.EM_ENABLEFEATURE, true, Feat, this)
+        ; TODO find out how this works
+    }
+
+    ; TODO GetZoom(&Nom, &Den), SetZoom(Nom, Den)
     ;@endregion
 }
 
-G := Gui()
-Ed := G.AddEdit("r7")
-Ed.EnableSearchWeb()
-G.Show()
+;@region Events
+class Tanuki_Edit_Events extends AquaHotkey_MultiApply {
+    static __New() {
+        if (VerCompare(A_AhkVersion, "v2.1-alpha.3") >= 0) {
+            super.__New(Gui.Edit)
+        }
+    }
 
+    OnFocus(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_SETFOCUS, Fn, Opt?)
+        return this
+    }
+
+    OnFocusLost(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_KILLFOCUS, Fn, Opt?)
+        return this
+    }
+
+    OnChange(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_CHANGE, Fn, Opt?)
+        return this
+    }
+
+    OnUpdate(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_UPDATE, Fn, Opt?)
+        return this
+    }
+
+    OnMemoryError(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_ERRSPACE, Fn, Opt?)
+        return this
+    }
+
+    OnMaxText(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_MAXTEXT, Fn, Opt?)
+        return this
+    }
+
+    OnHScroll(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_HSCROLL, Fn, Opt?)
+        return this
+    }
+
+    OnVScroll(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_VSCROLL, Fn, Opt?)
+        return this
+    }
+
+    OnAlignLeftToRight(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_ALIGN_LTR_EC, Fn, Opt?)
+        return this
+    }
+    
+    OnAlignRightToLeft(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_ALIGN_RTL_EC, Fn, Opt?)
+        return this
+    }
+
+    OnBeforePaste(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_BEFORE_PASTE, Fn, Opt?)
+        return this
+    }
+
+    OnAfterPaste(Fn, Opt?) {
+        this.OnCommand(WindowsAndMessaging.EN_AFTER_PASTE, Fn, Opt?)
+        return this
+    }
+}
+;@endregion
+
+g := Gui()
+e := g.AddEdit()
+g.Show()
+
+esc:: ExitApp()
