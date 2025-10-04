@@ -8,7 +8,7 @@
  */
 AddSplitButton(Opt := "", Txt?) {
     ; TODO use .IdealSize as default or something
-    Ctl := this.Add("Custom", "ClassButton 0xC" . Opt, Txt?)
+    Ctl := this.AddCustom("ClassButton 0xC" . Opt, Txt?)
     ObjSetBase(Ctl, Gui.SplitButton.Prototype)
     Ctl.ApplySize(Opt)
     return Ctl
