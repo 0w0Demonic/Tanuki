@@ -1,6 +1,6 @@
 # The Mysterious `EM_ENABLEFEATURE`
 
-I've been looking a little through the header files, and came across this section in `WinUser.h`:
+I've been looking through the header files, and came across this section in `WinUser.h`:
 
 ```c
 #if(WINVER >= 0x0604)
@@ -43,7 +43,7 @@ Now the only thing I need to find out is how to use the message.
 Okay... How would Microsoft do this?
 
 - Probably use `TRUE/FALSE` as return value to indicate success/fail.
-- wParam might be a reference to the enum (`EDIT_CONTROL_FEATURE`), lParam an on/off switch
+- wParam might be a reference to the enum (`EDIT_CONTROL_FEATURE`), lParam might be an on/off switch.
 - ... or the other way around.
 
 ```ahk
@@ -137,7 +137,7 @@ e.g. whether the user pressed `Ctrl+V` or pasted by using `Paste` in the context
 
 >## `EN_AFTER_PASTE` Notification
 >
->Sent successful clipboard paste operation is performed an on edit control.
+>Sent after a successful clipboard paste operation was performed an on edit control.
 >
 >### Parameters
 >
