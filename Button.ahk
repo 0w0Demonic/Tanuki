@@ -1,7 +1,8 @@
 #Include <AquaHotkey>
-
+#Include "%A_LineFile%\..\Event.ahk"
 #Include <AhkWin32Projection\Windows\Win32\Foundation\SIZE>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
+#Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMHDR>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMBCHOTITEM>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\BUTTON_IMAGELIST>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\Apis>
@@ -11,7 +12,24 @@
 #Include <AhkWin32Projection\Windows\Win32\Graphics\Gdi\HBITMAP>
 
 /**
- * Extension class for Gui.Button
+ * Extension class for `Gui.Button`.
+ * 
+ * ```
+ * class Gui.Button
+ * |- Click()
+ * |- Image { get; set; }
+ * |- IdealSize { get; }
+ * |- ImageList { get; set; }
+ * |- TextMargin { get; set; }
+ * |- RequireAdmin { get; }
+ * |- Highlighted { set; }
+ * |- State { get; set; }
+ * |- OnClick(Fn, Opt?)
+ * |- OnDoubleClick(Fn, Opt?)
+ * |- OnFocus(Fn, Opt?)
+ * |- OnFocusLost(Fn, Opt?)
+ * `- OnHover(Fn, Opt?)
+ * ```
  */
 class Tanuki_Button extends AquaHotkey_MultiApply {
     static __New() => super.__New(Gui.Button)
@@ -139,11 +157,11 @@ class Tanuki_Button extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnClick(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.BN_CLICKED, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(this, WindowsAndMessaging.BN_CLICKED,
+                Fn, Opt?)
     }
 
     /**
@@ -151,12 +169,12 @@ class Tanuki_Button extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnDoubleClick(Fn, Opt?) {
         ControlSetStyle("+" . WindowsAndMessaging.BS_NOTIFY, this)
-        this.OnCommand(WindowsAndMessaging.BN_DOUBLECLICKED, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(this, WindowsAndMessaging.BN_DOUBLECLICKED,
+                Fn, Opt?)
     }
 
     /**
@@ -164,12 +182,12 @@ class Tanuki_Button extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnFocus(Fn, Opt?) {
         ControlSetStyle("+" . WindowsAndMessaging.BS_NOTIFY, this)
-        this.OnCommand(WindowsAndMessaging.BN_SETFOCUS, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(this, WindowsAndMessaging.BN_SETFOCUS,
+                Fn, Opt?)
     }
 
     /**
@@ -177,33 +195,34 @@ class Tanuki_Button extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnFocusLost(Fn, Opt?) {
         ControlSetStyle("+" . WindowsAndMessaging.BS_NOTIFY, this)
-        this.OnCommand(WindowsAndMessaging.BN_KILLFOCUS, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(this, WindowsAndMessaging.BN_KILLFOCUS,
+                Fn, Opt?)
     }
 
     /**
      * Registers a function to call when the mouse is entering or leaving
      * the client area of the button.
      * 
-     * @see {NMBCHOTITEM}
-     * @see {Controls.HICF*}
+     * @see `NMBCHOTITEM`
+     * @see `Controls.HICF*`
      * @example
-     * Button_HotItemChanged(Btn, lParam) {
-     *     Hdr := NMBCHOTITEM(lParam)
-     * }
+     * (Btn: Gui.Button, HotItem: NMBCHOTITEM) => Void
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
      * @returns {this}
      */
     OnHover(Fn, Opt?) {
-        this.OnNotify(Controls.BCN_HOTITEMCHANGE, Fn, Opt?)
-        return this
+        GetMethod(Fn)
+        return Gui.Event.OnNotify(
+                this,
+                Controls.BCN_HOTITEMCHANGE,
+                (GuiObj, lParam) => Fn(GuiObj, NMBCHOTITEM(lParam)),
+                Opt?)
     }
-
     ;@endregion
 }

@@ -1,11 +1,19 @@
 #Include <AquaHotkey>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\Graphics\Gdi\HBITMAP>
-#Include <Tanuki\New\Button>
 
 /**
  * Extension class that introduces the command link control as a new
  * Gui class.
+ * 
+ * ```
+ * class Gui
+ * |- AddCommandLink(Opt := "", Txt?, Note?)
+ * `- class CommandLink
+ *    |- Note { get; set; }
+ *    |- NoteLength { get; }
+ *    `- Type { get; }
+ * ```
  */
 class Tanuki_CommandLink extends AquaHotkey {
 class Gui {

@@ -1,8 +1,7 @@
 #Include <AquaHotkey>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMHDR>
-#Include <AhkWin32Projection\Windows\Win32\UI\Controls\RichEdit\CLIPBOARDFORMAT>
-#Include <AhkWin32Projection\Windows\Win32\UI\Controls\RichEdit\Apis>
+#Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMSEARCHWEB>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\EDITBALLOONTIP>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\EDITBALLOONTIP_ICON>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\ENABLE_SCROLL_BAR_ARROWS>
@@ -12,6 +11,93 @@
 
 /**
  * Extension class for Gui.Edit.
+ * 
+ * ```
+ * class Gui.Edit
+ * |- Line[N := EditGetCurrentLine(this)] { get; }
+ * |- LineCount { get; }
+ * |- CurrentCol { get; }
+ * |- CurrentLine { get; }
+ * |- SelectedText { get; }
+ * |- Paste(Str)
+ * |
+ * |- Selection { get; }
+ * |- class Selection
+ * |  |- __New(EditCtl)
+ * |  |- Start { get; }
+ * |  |- End { get; }
+ * |  |- Length { get; }
+ * |  |- Text { get; }
+ * |  |- Set(Start, Length?)
+ * |  |- SelectAll()
+ * |  `- Clear()
+ * |
+ * |- WasModified { get; set; }
+ * |- CanUndo { get; }
+ * |- EmptyUndoBuffer()
+ * |- Undo()
+ * |
+ * |- Caret { get; }
+ * |- class Caret
+ * |  |- __New(EditCtl)
+ * |  |- Move(Line := this.Line, Column := this.Column)
+ * |  |- Scroll(UpDown := 0, LeftRight := 0)
+ * |  |- Line { get; set; }
+ * |  |- Column { get; set; }
+ * |  `- Index { get; set; }
+ * |
+ * |- CharFromPos(x, y, &Index, &Line?)
+ * |- PosFromChar(Index, &x, &y)
+ * |- LineFromChar(Index := EditGetCurrentLine(this))
+ * |- LogicalLineFromChar(Index := EditGetCurrentLine(this))
+ * |- LogicalLineCount { get; }
+ * |- LineIndex[Index := EditGetCurrentLine(this)] { get; }
+ * |- LogicalLineLength[Index := EditGetCurrentLine(this)] { get; }
+ * |- LogicalLine[Index := EditGetCurrentLine(this)] { get; }
+ * |- FirstVisibleLine { get; }
+ * |
+ * |- TextArea { get; set; }
+ * |- GetTextMargin(&Left, &Right)
+ * |- SetTextMargin(Left?, Right?)
+ * |
+ * |- AlignLeft()
+ * |- AlignRight()
+ * |- AlignCenter()
+ * |
+ * |- GetCue(MaxCap := 128)
+ * |- SetCue(Str, ShowWhenFocused := false)
+ * |
+ * |- ShowBalloonTip(Text := "", Title := "",
+ * |                 Icon := EDITBALLOONTIP_ICON.TTI_NONE)
+ * |- HideBalloonTip()
+ * |
+ * |- EnableWebSearch(OnOff := true)
+ * |- SearchWeb()
+ * |
+ * |- EndOfLine { get; set; }
+ * |- Limit { get; set; }
+ * |- FormatLine { set; }
+ * |- PasswordChar { get; set; }
+ * |- WordBreakProc { get; set; }
+ * |
+ * |- EnablePasteNotifs(OnOff := true)
+ * |- EnableEnterpriseDataProtection(OnOff := true)
+ * |
+ * |- OnFocus(Fn, Opt?)
+ * |- OnFocusLost(Fn, Opt?)
+ * |- OnChange(Fn, Opt?)
+ * |- OnUpdate(Fn, Opt?)
+ * |- OnMemoryError(Fn, Opt?)
+ * |- OnMaxText(Fn, Opt?)
+ * |- OnHScroll(Fn, Opt?)
+ * |- OnVScroll(Fn, Opt?)
+ * |- OnAlignLeftToRight(Fn, Opt?)
+ * |- OnAlignRightToLeft(Fn, Opt?)
+ * |
+ * |- OnBeforePaste(Fn, Opt?)
+ * |- OnAfterPaste(Fn, Opt?)
+ * `- OnWebSearch(Fn, Opt?)
+ * ```
  */
 class Tanuki_Edit extends AquaHotkey_MultiApply {
     static __New() => super.__New(Gui.Edit)
@@ -623,17 +709,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
 
     ;@region Web Search
     /**
-     * Enables the "Search with Bing..." context menu item.
+     * Enables or disables the "Search with Bing..." context menu item.
+     * 
+     * @param   {Boolean?}  OnOff  turn on/off web search
      */
-    EnableWebSearch() {
-        SendMessage(Controls.EM_ENABLESEARCHWEB, true, 0, this)
-    }
-
-    /**
-     * Disables the "Search with Bing..." context menu item.
-     */
-    DisableWebSearch() {
-        SendMessage(Controls.EM_ENABLESEARCHWEB, false, 0, this)
+    EnableWebSearch(OnOff := true) {
+        SendMessage(Controls.EM_ENABLESEARCHWEB, !!OnOff, 0, this)
     }
 
     /**
@@ -797,7 +878,6 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
         return this
     }
 
-    ; TODO is this true?
     /**
      * Registers a function to be called when the edit control is being
      * redrawn.
@@ -860,7 +940,6 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
         return this
     }
 
-    ; TODO do RTL and LTR this apply only to rich edit controls?
     /**
      * Registers a function to be called when text is being changed to
      * left-to-right direction.
@@ -891,23 +970,23 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * Registers a function to be called before the clipboard is being pasted
      * into the edit control.
      * 
-     * ```
-     * BeforePaste(EditCtl, lParam) {
-     *     return true
-     * }
-     * ```
-     * 
      * The return value of the function determines whether contents are to be
      * pasted. To prevent the clipboard from being pasted, return value `0`
      * (`FALSE`).
+     * 
+     * @example
+     * BeforePaste(EditCtl: Gui.Edit, Hdr: NMHDR) => Boolean
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
      * @returns {this}
      */
     OnBeforePaste(Fn, Opt?) {
-        this.OnNotify(WindowsAndMessaging.EN_BEFORE_PASTE, Fn, Opt?)
-        return this
+        return Gui.Event.OnNotify(
+                this,
+                WindowsAndMessaging.EN_BEFORE_PASTE,
+                (EditCtl, lParam) => Fn(EditCtl, NMHDR(lParam)),
+                Opt?)
     }
 
     /**
@@ -915,16 +994,18 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * into the edit control.
      * 
      * @example
-     * AfterPaste(EditCtl, lParam) {
-     * }
+     * AfterPaste(EditCtl: Gui.Edit, Hdr: NMHDR) => Void
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
      * @returns {this}
      */
     OnAfterPaste(Fn, Opt?) {
-        this.OnNotify(WindowsAndMessaging.EN_AFTER_PASTE, Fn, Opt?)
-        return this
+        return Gui.Event.OnNotify(
+                this,
+                WindowsAndMessaging.EN_AFTER_PASTE,
+                (EditCtl, lParam) => Fn(EditCtl, NMHDR(lParam)),
+                Opt?)
     }
 
     /**
@@ -932,18 +1013,18 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * search is being made.
      * 
      * @example
-     * WebSearch(EditCtl, lParam) {
-     *     Struct := NMSEARCHWEB(lParam)
-     *     ; ...
-     * }
+     * WebSearch(EditCtl: Gui.Edit, Notif: NMSEARCHWEB) => Void
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
      * @returns {this}
      */
     OnWebSearch(Fn, Opt?) {
-        this.OnNotify(Controls.EN_SEARCHWEB, Fn, Opt?)
-        return this
+        Gui.Event.OnNotify(
+                this,
+                Controls.EN_SEARCHWEB,
+                (EditCtl, lParam) => Fn(EditCtl, NMSEARCHWEB(lParam)),
+                Opt?)
     }
 }
 ;@endregion

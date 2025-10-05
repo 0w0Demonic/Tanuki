@@ -1,10 +1,23 @@
 #Include <AquaHotkey>
-
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\BUTTON_SPLITINFO>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMBCDROPDOWN>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\Apis>
 
+/**
+ * Introduces the split button as new `Gui.SplitButton`.
+ * 
+ * ```
+ * class Gui
+ * |- AddSplitButton(Opt := "", Txt?)
+ * `- class SplitButton extends Gui.Button
+ *    |- Settings { get; set; }
+ *    |- OnDropDown(Fn, Opt?)
+ *    |- DropDown()
+ *    |- UndoDropDown()
+ *    `- Type { get; }
+ * ```
+ */
 class Tanuki_SplitButton extends AquaHotkey {
 class Gui {
     /**
