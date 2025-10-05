@@ -10,11 +10,24 @@ _|_ _ __      |/ o |  |     *0,.o*
 
 ## AutoHotkey `Gui` on Steroids
 
-Tanuki is a Gui library for AutoHotkey v2 that massively upgrades the native
-`Gui` type and its controls with Win32 features - some of which you've probably
-never heard of.
+Tanuki is a Gui library for AutoHotkey v2 that *directly upgrades* the native
+`Gui` type and its controls with deep Win32 integration.
 
-Example: Clipboard paste notification for edit controls (Windows 10+):
+No wrappers, no boilerplate. Just features that feel like they were there from
+day one.
+
+## Features at a Glance
+
+- Extensions for built-in Gui controls
+- Win32 events and notifications (e.g. paste notifications for Edit controls)
+- Very modular design
+- Powered by [AquaHotkey](https://www.github.com/0w0Demonic/AquaHotkey) for
+  painless class prototyping
+- Standardized Win32 API access with the help of
+  [AhkWin32Projection](https://www.github.com/holy-tao/AhkWin32Projection)
+  (no more manual structs)
+
+### Example: Clipboard Paste Notifications (Windows 10+)
 
 ```ahk
 #Include <Tanuki\Edit>
@@ -24,17 +37,16 @@ e := g.AddEdit()
 
 ; enables paste notifications
 e.EnablePasteNotifs()
+
+; catch clipboard paste notifications
 e.OnBeforePaste(BeforePaste)
 e.OnAfterPaste(AfterPaste)
 g.Show()
 
 BeforePaste(EditCtl, lParam) {
-    ; the actual notification struct is undocumented - but it probably only
-    ; contains clipboard-related data, and `A_Clipboard` still exists.
-    Hdr := NMHDR(lParam)
-
+    Hdr := NMHDR(lParam) ; undocumented struct
     MsgBox("pasting: " . A_Clipboard)
-    return true ; `false` cancels the paste operation
+    return true ; return `false` to cancel paste
 }
 
 AfterPaste(EditCtl, lParam) {
@@ -43,20 +55,26 @@ AfterPaste(EditCtl, lParam) {
 }
 ```
 
-## Design
-
-Tanuki consists of a variety of standalone packages which add new features baked
-directly into the native `Gui` and its controls.
+### Another Example: New `Gui.CommandLink` Class
 
 ```ahk
-#Include <Tanuki\Edit> ; extensions for `Gui.Edit`
+#Include <Tanuki\CommandLink>
+
+g := Gui()
+cl := g.AddCommandLink("w350 h100", "Command Link Button",
+        "A special type of button with a lightweight appearance")
+g.Show()
 ```
 
 ## Why it Matters
 
-There's tons of AutoHotkey Gui libraries, most of them using the same Win32 API.
-My goal is to provide a complete and modular wrapper for all of the relevant parts
-of the Win32 API, in a way that feels like it's a built-in feature.
+There are other Gui libraries that add their features in the form of
+properties - quick shoutout to [GuiEnhancerKit](https://github.com/nperovic/GuiEnhancerKit/blob/main/GuiEnhancerKit.ahk),
+it's an awesome library. Tanuki goes a little further by going all-in on class prototyping:
+
+- Features feel native, not bolted on
+- Consistent, modular, and extensible design
+- Built on top of solid libraries that remove the pain of dealing with Win32 directly
 
 ## Getting Started
 
@@ -67,17 +85,13 @@ AutoHotkey lib folders.
 git clone https://www.github.com/0w0Demonic/Tanuki
 ```
 
-Dependancies:
+Dependancies (install first):
+
 - [AquaHotkey](https://www.github.com/0w0Demonic/AquaHotkey)
 - [AhkWin32Projection](https://www.github.com/holy-tao/AhkWin32Projection)
 
-Now, `#Include` one of the many packages available:
+## About
 
-```ahk
-#Include <Tanuki\CommandLink>
+Made with love and lots of caffeine.
 
-g := Gui()
-cl := g.AddCommandLink("w350 h100", "Command Link Button",
-        "A special type of button "
-        . "button")
-```
+- 0w0Demonic
