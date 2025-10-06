@@ -45,7 +45,7 @@ class Tanuki_Gui_Event extends AquaHotkey_MultiApply {
          */
         static OnMessage(GuiObj, Msg, Fn, Opt?) {
             GuiObj.OnMessage(Msg, Fn, Opt?)
-            return this((_) => _.OnMessage(Msg, Fn, false))
+            return this((_) => GuiObj.OnMessage(Msg, Fn, false))
         }
 
         /**
@@ -60,7 +60,7 @@ class Tanuki_Gui_Event extends AquaHotkey_MultiApply {
          */
         static OnNotify(GuiObj, Notif, Fn, Opt?) {
             GuiObj.OnNotify(Notif, Fn, Opt?)
-            return this((_) => _.OnNotify(Notif, Fn, false))
+            return this((_) => GuiObj.OnNotify(Notif, Fn, false))
         }
 
         /**
@@ -75,7 +75,7 @@ class Tanuki_Gui_Event extends AquaHotkey_MultiApply {
          */
         static OnCommand(GuiObj, Cmd, Fn, Opt?) {
             GuiObj.OnCommand(Cmd, Fn, Opt?)
-            return this((_) => _.OnCommand(Cmd, Fn, false))
+            return this((_) => GuiObj.OnCommand(Cmd, Fn, false))
         }
     }
 }
