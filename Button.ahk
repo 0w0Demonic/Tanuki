@@ -1,5 +1,5 @@
 #Include <AquaHotkey>
-#Include "%A_LineFile%\..\Event.ahk"
+#Include <Tanuki\Event>
 #Include <AhkWin32Projection\Windows\Win32\Foundation\SIZE>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMHDR>

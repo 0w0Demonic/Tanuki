@@ -1,11 +1,9 @@
 #Include <AquaHotkey>
-#Include "%A_LineFile%\..\Event.ahk"
+#Include <Tanuki\Event>
 #Include <AhkWin32Projection\Windows\Win32\Foundation\SIZE>
-#Include <AhkWin32Projection\Windows\Win32\Foundation\SYSTEMTIME>
 #Include <AhkWin32Projection\Windows\Win32\Foundation\COLORREF>
 #Include <AhkWin32Projection\Windows\Win32\Graphics\Gdi\Apis>
 #Include <AhkWin32Projection\Windows\Win32\Graphics\Gdi\HFONT>
-#Include <AhkWin32Projection\Windows\Win32\System\SystemInformation\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\DATETIMEPICKERINFO>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMHDR>
@@ -546,24 +544,6 @@ class DateTime {
     ;@endregion
 } ; class DateTime
 } ; class Gui
-
-;@region SYSTEMTIME
-class SYSTEMTIME {
-    static Now() {
-        SystemInformation.GetSystemTime(St := this())
-        return St
-    }
-
-    ToString(Fmt := "yyyy.MM.dd HH:mm:ss") {
-        return FormatTime(Format("{}{:02}{:02}{:02}{:02}{:02}",
-                Min(this.wYear, 9999),
-                this.wMonth,
-                this.wDay,
-                this.wHour,
-                this.wMinute,
-                this.wSecond), Fmt)
-    }
-} ; class SYSTEMTIME
 ;@endregion
 } ; class Tanuki_DateTime extends AquaHotkey
 
