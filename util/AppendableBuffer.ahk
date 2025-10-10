@@ -2,10 +2,8 @@
 
 class AppendableBuffer extends Buffer {
     Offset {
-        get {
-            this.DefineProp("Offset", { Value: 0 })
-            return 0
-        }
+        get => this.DefineProp("Offset", { Value: 0     }) && 0
+        set => this.DefineProp("Offset", { Value: Value })
     }
 
     ; TODO add more
@@ -14,8 +12,9 @@ class AppendableBuffer extends Buffer {
             throw TypeError("Expected an Integer",, Type(Value))
         }
         this.EnsureCapacity(2)
-        NumPut("UShort", Value, this, Offset)
-        Offset += 2
+
+        NumPut("UShort", Value, this, this.Offset)
+        this.Offset += 2
         return this
     }
 
@@ -50,6 +49,9 @@ class AppendableBuffer extends Buffer {
         if (!(Size & (Size - 1))) {
             throw ValueError("Expected a poewr of 2",, Size)
         }
+        Mask := (Size - 1)
+        this.Offset := (this.Offset + Mask) & ~Mask
+        return this
     }
 
     /**

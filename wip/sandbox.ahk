@@ -1,6 +1,9 @@
 #Requires AutoHotkey v2.0
+
 #Include <AquaHotkey>
-#Include <AhkWin32Projection\CStyleArray>
+#Include <Tanuki\util\Dialog>
+#Include <Tanuki\util\DialogItem>
+
 #Include <AhkWin32Projection\Windows\Win32\Foundation\HWND>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\HICON>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\Apis>
@@ -14,59 +17,6 @@
 #Include <AhkWin32Projection\Windows\Win32\Graphics\Gdi\HBITMAP>
 #Include <AhkWin32Projection\Windows\Win32\Graphics\Gdi\HPALETTE>
 #Include <AhkWin32Projection\Windows\Win32\System\LibraryLoader\Apis>
-
-;@region DLGTEMPLATE
-/**
- * 
- */
-class Tanuki_DLGTEMPLATE extends AquaHotkey_MultiApply {
-    static __New() => super.__New(DLGTEMPLATE)
-
-    __New() {
-        (Win32Struct.Prototype.__New)(this)
-        this.style := WINDOW_STYLE.WS_CHILD | WINDOW_STYLE.WS_VISIBLE
-    }
-
-    Style(Style, ExStyle := 0) {
-        this.style := Style
-        this.dwExtendedStyle := ExStyle
-        return this
-    }
-
-    Position(x, y) {
-        this.x := x
-        this.y := y
-        return this
-    }
-
-    Small() {
-        this.cx := Controls.PROP_SM_CXDLG
-        this.cy := Controls.PROP_SM_CYDLG
-        return this
-    }
-
-    Medium() {
-        this.cx := Controls.PROP_MED_CXDLG
-        this.cy := Controls.PROP_MED_CYDLG
-        return this
-    }
-
-    Large() {
-        this.cx := Controls.PROP_LG_CXDLG
-        this.cy := Controls.PROP_LG_CYDLG
-        return this
-    }
-
-    Size(cx, cy) {
-        this.cx := cx
-        this.cy := cy
-        return this
-    }
-
-    ; TODO deal with this absolute undocumented hell that's going on beyond
-    ; the struct boundary
-}
-;@endregion
 
 ;@region PROPSHEETPAGEW
 /**
