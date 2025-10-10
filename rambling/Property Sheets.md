@@ -106,7 +106,7 @@ This time, you have 6 different `WORD` values used as standard dialog controls:
 
 ### Control Text / Resource
 
-A UTF-16 string, a resource (`0xFFFF`, `WORD`), or (nothing `0x0000`).
+A UTF-16 string, a resource (`0xFFFF`, `WORD`), or nothing (`0x0000`).
 
 ### Additional Data
 
@@ -118,4 +118,4 @@ In other words, either append `0x0000`, or `<size in bytes><memory block>`.
 
 There’s a weird charm to how bare-metal Win32 programming is. It's like building
 a car from spare parts just because you can. You feel the history in every
-struct and flag and hear the dial-up tone in the distance.
+struct and flag and hear the dial-up tone somewhere in the distance.

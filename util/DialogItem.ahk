@@ -156,13 +156,12 @@ class DialogItem extends AppendableBuffer {
         if (this.IsBuilt) {
             return this.Size
         }
-
-        Offset := DLGTEMPLATE.sizeof
+        this.Offset := DLGITEMTEMPLATE.sizeof
 
         ; window class
         switch {
             case (!HasProp(this, "__ControlType")):
-                throw UnsetError("Requires a window class")
+                this.AppendUShort(0)
             case (this.__ControlType is String):
                 this.AppendString(this.__ControlType)
             case (this.__ControlType is Integer):
@@ -172,7 +171,7 @@ class DialogItem extends AppendableBuffer {
                                 Type(this.__ControlType))
         }
 
-        ; title
+        ; text
         switch {
             case (!HasProp(this, "__Text")):
                 this.AppendUShort(0)
@@ -185,13 +184,14 @@ class DialogItem extends AppendableBuffer {
         ; data
         if (HasProp(this, "__Data") && (this.__Data is Buffer)) {
             Buf := this.__Data
-            this.AppendUShort(Buf.Size).AppendData(Buf.Ptr)
+            this.AppendUShort(Buf.Size).AppendData(Buf.Ptr, Buf.Size)
         } else {
             this.AppendUShort(0)
         }
 
+        this.Size := this.Offset
         this.IsBuilt := true
-        return Offset
+        return this
     }
 
     /**

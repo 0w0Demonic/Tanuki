@@ -148,16 +148,31 @@ class Dialog extends AppendableBuffer {
     }
 
     /**
+     * Sets the title of the dialog.
+     * 
+     * @param   {String}  Title  the dialog title
+     * @returns {this}
+     */
+    Title(Title) {
+        if (!(Title is String)) {
+            throw TypeError("Expected a String",, Type(Title))
+        }
+        return this.DefineProp("__Title", { Value: Title })
+    }
+
+    /**
      * Adds a new dialog control.
      * 
-     * @param   {DialogItem}
+     * @param   {DialogItem*}
      */
-    Control(Control) {
+    Controls(Controls*) {
         this.IsBuilt := false
-        if (!(Control is DialogItem)) {
-            throw TypeError("Expected a DialogItem",, Type(Control))
+        for Control in Controls {
+            if (!(Control is DialogItem)) {
+                throw TypeError("Expected a DialogItem",, Type(Control))
+            }
+            this.__Controls.Push(Control)
         }
-        this.__Controls.Push()
         return this
     }
 
@@ -176,11 +191,12 @@ class Dialog extends AppendableBuffer {
             return this.Size
         }
 
-        this.Offset := DLGITEMTEMPLATE.sizeof
+        this.Offset := DLGTEMPLATE.sizeof
 
         ; menu
         switch {
             case (!HasProp(this, "__Menu")):
+                MsgBox("menu (0)")
                 this.AppendUShort(0)
             case (this.__Menu is String):
                 this.AppendString(this.__Menu)
@@ -194,6 +210,7 @@ class Dialog extends AppendableBuffer {
         ; window class
         switch {
             case (!HasProp(this, "__WindowClass")):
+                MsgBox("class (0)")
                 this.AppendUShort(0)
             case (this.__WindowClass is String):
                 this.AppendString(this.__WindowClass)
@@ -220,12 +237,14 @@ class Dialog extends AppendableBuffer {
         this.cdit := this.__Controls.Length
 
         for Ctl in this.__Controls {
-            Size := Ctl.Build()
+            Ctl.Build()
+            Size := Ctl.Size
             Mem := Ctl.Ptr
             this.Align(4).AppendData(Mem, Size)
         }
 
         this.IsBuilt := true
+        this.Size := this.Offset
         return this
     }
 }

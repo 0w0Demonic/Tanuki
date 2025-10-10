@@ -2,19 +2,28 @@
 
 class AppendableBuffer extends Buffer {
     Offset {
-        get => this.DefineProp("Offset", { Value: 0     }) && 0
+        get {
+            this.DefineProp("Offset", { Value: 0 })
+            return 0
+        }
         set => this.DefineProp("Offset", { Value: Value })
     }
 
     ; TODO add more
-    AppendUShort(Value) {
-        if (!IsInteger(Value)) {
-            throw TypeError("Expected an Integer",, Type(Value))
-        }
-        this.EnsureCapacity(2)
+    AppendUShort(Value) => this.Append("UShort", 2, Value)
 
-        NumPut("UShort", Value, this, this.Offset)
-        this.Offset += 2
+    AppendPtr(Value) => this.Append("Ptr", 8, Value)
+
+    Append(DataType, Size, Value) {
+        if (!(DataType is String)) {
+            throw TypeError("Expected a String",, Type(DataType))
+        }
+        if (!IsInteger(Size)) {
+            throw TypeError("Expected an Integer",, Type(Size))
+        }
+        this.EnsureCapacity(Size)
+        NumPut(DataType, Value, this, this.Offset)
+        this.Offset += Size
         return this
     }
 
@@ -22,7 +31,7 @@ class AppendableBuffer extends Buffer {
         this.EnsureCapacity(Size)
         Offset := this.Offset
         Loop Size {
-            Num := NumGet(Mem, Offset, "UChar")
+            Num := NumGet(Mem, A_Index - 1, "UChar")
             NumPut("UChar", Num, this, Offset)
             Offset++
         }
@@ -30,27 +39,24 @@ class AppendableBuffer extends Buffer {
         return this
     }
 
-    AppendString(Str, Encoding?) {
+    AppendString(Str, Encoding := "UTF-16") {
         if (!(Str is String)) {
             throw TypeError("Expected a String",, Type(Str))
         }
-        if (IsSet(Encoding)) {
-            Size := StrPut(Str, Encoding?)
-        } else {
-            Size := StrPut(Str)
-        }
+        Size := StrPut(Str, Encoding)
         this.EnsureCapacity(Size)
-        StrPut(Str, this.Ptr + this.Offset, Size)
+        StrPut(Str, this.Ptr + this.Offset, Encoding)
+        this.Offset += Size
         return this
     }
 
     Align(Size) {
         ; asserts that this is a 2^n integer
-        if (!(Size & (Size - 1))) {
-            throw ValueError("Expected a poewr of 2",, Size)
+        if (Size & (Size - 1)) {
+            throw ValueError("Expected a power of 2",, Size)
         }
         Mask := (Size - 1)
-        this.Offset := (this.Offset + Mask) & ~Mask
+        this.Offset := (this.Offset + Mask) & ~Mask ; evil bit hack
         return this
     }
 
