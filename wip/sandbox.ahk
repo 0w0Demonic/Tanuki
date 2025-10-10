@@ -5,6 +5,7 @@
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\HICON>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGTEMPLATE>
+#Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\WINDOW_STYLE>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\HPROPSHEETPAGE>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETPAGEW>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETHEADERW_V1>
@@ -15,8 +16,16 @@
 #Include <AhkWin32Projection\Windows\Win32\System\LibraryLoader\Apis>
 
 ;@region DLGTEMPLATE
+/**
+ * 
+ */
 class Tanuki_DLGTEMPLATE extends AquaHotkey_MultiApply {
     static __New() => super.__New(DLGTEMPLATE)
+
+    __New() {
+        (Win32Struct.Prototype.__New)(this)
+        this.style := WINDOW_STYLE.WS_CHILD | WINDOW_STYLE.WS_VISIBLE
+    }
 
     Style(Style, ExStyle := 0) {
         this.style := Style
@@ -24,19 +33,33 @@ class Tanuki_DLGTEMPLATE extends AquaHotkey_MultiApply {
         return this
     }
 
-    Dimension(x, y, cx, cy) {
+    Position(x, y) {
         this.x := x
         this.y := y
-        this.cx := cx
-        this.cy := cy
         return this
     }
 
-    Rect(Left, Top, Right, Bottom) {
-        this.x := Left
-        this.y := Top
-        this.cx := Right - Left
-        this.cy := Bottom - Top
+    Small() {
+        this.cx := Controls.PROP_SM_CXDLG
+        this.cy := Controls.PROP_SM_CYDLG
+        return this
+    }
+
+    Medium() {
+        this.cx := Controls.PROP_MED_CXDLG
+        this.cy := Controls.PROP_MED_CYDLG
+        return this
+    }
+
+    Large() {
+        this.cx := Controls.PROP_LG_CXDLG
+        this.cy := Controls.PROP_LG_CYDLG
+        return this
+    }
+
+    Size(cx, cy) {
+        this.cx := cx
+        this.cy := cy
         return this
     }
 
@@ -46,15 +69,45 @@ class Tanuki_DLGTEMPLATE extends AquaHotkey_MultiApply {
 ;@endregion
 
 ;@region PROPSHEETPAGEW
+/**
+ * ```
+ * class PROPSHEETPAGEW
+ * |- __New()
+ * |- Resource(Resource)
+ * |- DialogProc(Fn)
+ * |- Title(Title)
+ * |- Icon(Icon)
+ * |- Param(lParam)
+ * |- Header(Title?, SubTitle?)
+ * |- HeaderImage(Bitmap)
+ * |- OnError(Fn)
+ * `- __Delete()
+ * ```
+ */
 class Tanuki_PROPSHEETPAGEW extends AquaHotkey_MultiApply {
     static __New() => super.__New(PROPSHEETPAGEW)
 
-    __New() {
-        (Win32Struct.Prototype.__New)(this)
+    ; TODO this might be an issue because we're writing controls
+    ; somewhere after the struct has ended.
+
+    /**
+     * Creates a new `PROPSHEETPAGEW` and initializes with default
+     * values.
+     * 
+     */
+    __New(lParam := 0) {
+        (Win32Struct.Prototype.__New)(this, lParam)
         this.dwSize := PROPSHEETPAGEW.sizeof
         this.hInstance := LibraryLoader.GetModuleHandleW(0)
     }
 
+    /**
+     * Specifies a `DLGTEMPLATE` as resource to be used by the
+     * `pResource`.
+     * 
+     * @param   {DLGTEMPLATE}  Resource  the resource to be used
+     * @returns {this}
+     */
     Resource(Resource) {
         if (!(Resource is DLGTEMPLATE)) {
             throw TypeError("Expected a DLGTEMPLATE",, Type(Resource))
@@ -66,13 +119,27 @@ class Tanuki_PROPSHEETPAGEW extends AquaHotkey_MultiApply {
         return this
     }
 
+    /**
+     * Defines the procedure to be used by the property sheet page.
+     * 
+     * @param   {Func}  Fn  the function to be called
+     * @returns {this}
+     */
     DialogProc(Fn) {
-        GetMethod(Fn)
-        this.pfnDlgProc := CallbackCreate(Fn, "Fast")
+        this.pfnDlgProc := CallbackCreate(GetMethod(Fn), "Fast")
         return this
     }
 
+    /**
+     * 
+     * 
+     * @param   {String}
+     * @returns {this}
+     */
     Title(Title) {
+        if (!(Title is String)) {
+            throw TypeError("Expected a String",, Type(Title))
+        }
         Buf := Buffer(StrPut(Title, "UTF-16"), 0)
         StrPut(Title, Buf, "UTF-16")
         this.__Title := Buf
@@ -121,7 +188,7 @@ class Tanuki_PROPSHEETPAGEW extends AquaHotkey_MultiApply {
         return this
     }
 
-    Callback(Fn) {
+    OnError(Fn) {
         GetMethod(Fn)
         this.pfnCallback := CallbackCreate(Fn, "Fast")
         return this
@@ -149,19 +216,14 @@ class Tanuki_PROPSHEETPAGEW extends AquaHotkey_MultiApply {
 
 ;@region PROPSHEETHEADERW
 ; TODO V1
+; TODO write this in the form of a `class Wizard`, `class PropertySheet`, etc.
 class Tanuki_PROPSHEETHEADERW extends AquaHotkey_MultiApply {
     static __New() => super.__New(PROPSHEETHEADERW_V2)
 
     __New() {
         (Win32Struct.Prototype.__New)(this)
         this.dwSize := PROPSHEETHEADERW_V2.sizeof
-        this.hInstance := A_ScriptHwnd
-        this.hwndParent := A_ScriptHwnd
-    }
-
-    Caption(Caption) {
-        this.__Caption := Caption
-        this.pszCaption := StrPtr(Caption)
+        this.hInstance := LibraryLoader.GetModuleHandleW(0)
     }
 
     Parent(Hwnd) {
@@ -207,7 +269,6 @@ class Tanuki_PROPSHEETHEADERW extends AquaHotkey_MultiApply {
         Buf := Buffer(StrPut(Start, "UTF-16"), 0)
         StrPut(Start, Buf, "UTF-16")
 
-        MsgBox("hi")
         this.__pStartPage := Buf
         this.pStartPage := Buf.Ptr
         this.dwFlags |= Controls.PSH_USEPSTARTPAGE
@@ -244,6 +305,9 @@ class Tanuki_PROPSHEETHEADERW extends AquaHotkey_MultiApply {
         if (!Pages.Length) {
             throw UnsetError("No pages set")
         }
+        if (Pages.Length > Controls.MAXPROPPAGES) {
+            throw Error("Too many pages",, Pages.Length)
+        }
         Buf := Buffer(Pages.Length * A_PtrSize, 0)
 
         for Page in Pages {
@@ -259,9 +323,7 @@ class Tanuki_PROPSHEETHEADERW extends AquaHotkey_MultiApply {
         }
         this.nPages := Pages.Length
         this.__phpage := Buf
-        MsgBox("before: " . this.pStartPage)
         this.phpage := Buf.Ptr
-        MsgBox("after: " . Format("{:#x}", this.pStartPage))
         return this
     }
 
@@ -314,22 +376,55 @@ class Tanuki_PROPSHEETHEADERW extends AquaHotkey_MultiApply {
 
 #Include <Tanuki\util\Dump>
 
+hbmp := LoadPicture(A_Desktop . "\Vault\Jarvis.bmp", unset, &ImageType)
+if (!hbmp) {
+    throw Error("Unable to load bitmap")
+}
+Bitmap := HBITMAP.FromObject({ Value: hbmp })
+
 Page := PROPSHEETPAGEW()
+    .Resource(DLGTEMPLATE().Small())
+    .Title("Cool Title")
+    .Header("Header Title")
+    .DialogProc((hwnd, msg, wparam, lparam) {
+        if (msg == WindowsAndMessaging.WM_INITDIALOG) {
+            return true
+        }
+        return false
+    })
+
 Handle := Controls.CreatePropertySheetPageW(Page)
 if (!Handle) {
     MsgBox("Unable to create page")
 }
 
+PageTwo := Page.Clone()
+PageTwo.Title("Page two")
+
+Page.dwFlags |= Controls.PSP_HASHELP
+
 Header := PROPSHEETHEADERW_V2()
-    .Pages(Page)
-    .Wizard()
+    .Pages(Page, PageTwo)
+    .Wizard97()
     .Title("My Property Sheet")
+    .Watermark(Bitmap)
 
+; Header.dwFlags |= Controls.PSH_MODELESS
 
-MsgBox(Header.HexDump())
-MsgBox(Header.DumpProps())
+Header.dwFlags |= Controls.PSH_HEADER
+Header.dwFlags |= Controls.PSH_WIZARDHASFINISH
 
-MsgBox(Controls.PropertySheetW(Header))
+if (!(Header.dwFlags & Controls.PSH_WIZARD97)) {
+    throw Error("Not wizard 97")
+}
+if (!(Page.dwFlags & Controls.PSP_USEHEADERTITLE)) {
+    throw Error("Has no header")
+}
+
+; MsgBox(Page.DumpProps())
+; MsgBox(Header.DumpProps())
+
+Controls.PropertySheetW(Header)
 
 ^+a:: {
     ExitApp()
