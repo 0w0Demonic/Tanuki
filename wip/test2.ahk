@@ -1,28 +1,89 @@
-#Requires AutoHotkey v2.0
-
-#Include <Tanuki\wip\Dialog>
-#Include <Tanuki\wip\DialogItem>
-
+#Include <Tanuki\util\Dialog>
+#Include <Tanuki\util\DialogItem>
 #Include <Tanuki\util\PropertySheet>
 #Include <Tanuki\util\PropertySheetPage>
+#Include <Tanuki\util\Wizard>
 
-Page := PropertySheetPage()
-    .Title("Hello, world!")
-    .Dialog(Dialog()
-        .Size(100, 200)
+
+#Include <AhkWin32Projection\Windows\Win32\UI\Controls\INITCOMMONCONTROLSEX>
+#Include <AhkWin32Projection\Windows\Win32\UI\Controls\INITCOMMONCONTROLSEX_ICC>
+
+ICC := INITCOMMONCONTROLSEX()
+ICC.dwSize := INITCOMMONCONTROLSEX.sizeof
+ICC.dwICC := INITCOMMONCONTROLSEX_ICC.ICC_WIN95_CLASSES
+
+GetDlg(Title, Text) {
+    Dlg := Dialog()
+        .Small()
+        .Font("MS Shell Dlg", 8)
+        .Title(Title)
         .Controls(
-            DialogItem()
-                .Type(0x0082)
-                .Position(10, 10)
-                .Size(180, 10)
-                .Text("Hello, world!")
+            DialogItem.Button(Text, true)
+                .Position(30, 30)
+                .Size(80, 20)
                 .Id(1)
         )
-    )
-    .DialogProc((*) => false)
+    Dlg.style |= WindowsAndMessaging.DS_CONTROL
+    Dlg.style |= WindowsAndMessaging.DS_3DLOOK
+    return Dlg
+}
 
-PropSheet := PropertySheet()
+#Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMHDR>
+#Include <AhkWin32Projection\Windows\Win32\Graphics\Gdi\Apis>
+
+GetPage(Title, Text) {
+    return PropertySheetPage()
+        .Dialog(GetDlg(Title, Text))
+        .DialogProc((Hwnd, Msg, wParam, lParam) {
+            if (Msg == WindowsAndMessaging.WM_NOTIFY) {
+                Hdr := NMHDR(lParam)
+                if (Hdr.Code == Controls.PSN_HELP) {
+                    MsgBox("Help!")
+                }
+                if (Hdr.Code == Controls.PSN_QUERYCANCEL) {
+                    MsgBox("Want cancel!")
+                    return true
+                }
+            }
+
+            if (Msg == WindowsAndMessaging.WM_CLOSE) {
+                return false
+            }
+            if (Msg != WindowsAndMessaging.WM_COMMAND) {
+                return false
+            }
+            if ((wParam >>> 16) == WindowsAndMessaging.BN_CLICKED) {
+                MsgBox(lParam . " was clicked!")
+                return false
+            }
+        })
+        .HeaderTitle("Title", "Subtitle")
+}
+
+Page := GetPage("Page 1", "Text 1")
+
+Wiz := Wizard97()
     .Title("Cool title")
-    .Pages(Page)
+    .Pages(
+        Page,
+        GetPage("Page 2", "Text 2")
+    )
+    ;.RemoveContextHelp()
+    ;.RemoveApplyButton()
+    ;.HasHelp()
+    ;.Resizable()
 
-MsgBox(Controls.PropertySheetW(PropSheet))
+#Include <Tanuki\util\Dump>
+
+Wiz.dwFlags |= Controls.PSH_HEADER
+
+MsgBox(Wiz.dwFlags & Controls.PSH_WATERMARK)
+Wiz.dwFlags |= Controls.PSH_MODELESS
+
+Bitmap := LoadPicture("C:\Users\roemer\Pictures\graph.bmp")
+
+hPropSheet := Controls.PropertySheetW(Wiz)
+
+^+a:: {
+    ExitApp()
+}

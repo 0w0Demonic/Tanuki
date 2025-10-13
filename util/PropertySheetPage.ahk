@@ -1,5 +1,5 @@
-#Include <Tanuki\wip\Dialog>
-#Include <Tanuki\wip\DialogItem>
+#Include <Tanuki\util\Dialog>
+#Include <Tanuki\util\DialogItem>
 #Include <Tanuki\util\Buffers>
 
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETPAGEW>
@@ -30,15 +30,14 @@ class PropertySheetPage extends PROPSHEETPAGEW {
      * @returns {this}
      */
     Dialog(Dlg) {
-        ; TODO use a defensive copy?
         if (!(Dlg is Dialog)) {
             throw TypeError("Expected a Dialog",, Type(Dlg))
         }
-        Dlg.Build() ; fully construct the dialog template
-
+        Dlg.Build()
+        Buf := ClipboardAll(Dlg.Ptr, Dlg.Pos)
+        this.__pResource := Buf
+        this.pResource := Buf.Ptr
         this.dwFlags |= Controls.PSP_DLGINDIRECT
-        this.pResource := Dlg.Ptr
-        this.__pResource := Dlg
         return this
     }
 
@@ -101,18 +100,17 @@ class PropertySheetPage extends PROPSHEETPAGEW {
      * @param   {String?}  SubTitle  subtitle of the header area
      * @returns {this}
      */
-    HeaderTitle(Title, SubTitle?) {
-        this.__pszHeaderTitle := Buffers.FromString(Title)
-        this.pszHeaderTitle := this.__pszHeaderTitle.Ptr
-        ; this.dwFlags |= Controls.PSP_USEHEADERTITLE
-
-        if (!IsSet(SubTitle)) {
-            return this
+    HeaderTitle(Title?, SubTitle?) {
+        if (IsSet(Title)) {
+            this.__pszHeaderTitle := Buffers.FromString(Title)
+            this.pszHeaderTitle := this.__pszHeaderTitle.Ptr
+            this.dwFlags |= Controls.PSP_USEHEADERTITLE
         }
-
-        this.__pszHeaderSubTitle := Buffers.FromString(SubTitle)
-        this.pszHeaderSubTitle := this.__pszHeaderSubTitle.Ptr
-        ; this.dwFlags |= Controls.PSP_USEHEADERSUBTITLE
+        if (IsSet(SubTitle)) {
+            this.__pszHeaderSubTitle := Buffers.FromString(SubTitle)
+            this.pszHeaderSubTitle := this.__pszHeaderSubTitle.Ptr
+            this.dwFlags |= Controls.PSP_USEHEADERSUBTITLE
+        }
         return this
     }
 

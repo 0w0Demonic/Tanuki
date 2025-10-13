@@ -227,7 +227,6 @@ class PropertySheetBuilder {
 
 
 #Include <AquaHotkey\Src\Builtins\Buffer>
-#Include <Tanuki\wip\DialogItem>
 
 TestDialog() {
     dlg := DLGTEMPLATEBuilder()

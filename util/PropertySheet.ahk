@@ -1,9 +1,10 @@
-#Requires AutoHotkey v2.0
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETHEADERW_V2>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETPAGEW>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\System\LibraryLoader\Apis>
 #Include <Tanuki\util\Buffers>
+#Include <Tanuki\util\AppendableBuffer>
+#Include <Tanuki\util\Wizard>
 
 /**
  * Defines the frame and pages of a property sheet.
@@ -90,6 +91,12 @@ class PropertySheet extends PROPSHEETHEADERW_V2 {
         return this
     }
 
+    /**
+     * Sets the pages of the property sheet.
+     * 
+     * @param   {PropertySheetPage*}  Page  the pages to be displayed
+     * @returns {this}
+     */
     Pages(Pages*) {
         if (!Pages.Length) {
             throw UnsetError("No pages are set")
@@ -109,12 +116,69 @@ class PropertySheet extends PROPSHEETHEADERW_V2 {
             Buf.AddPtr(Handle)
         }
 
-        this.nPages := Pages.Length
+        this.__Pages  := Pages
+        this.nPages   := Pages.Length
+
         this.__phpage := Buf
-        this.phpage := Buf.Ptr
+        this.phpage   := Buf.Ptr
         return this
     }
 
+    /**
+     * Enables a help button to be displayed when the page is created. If any
+     * of the property sheet pages enable a help button, this flag is set
+     * automatically.
+     * 
+     * @returns {this}
+     */
+    HasHelp() {
+        if (this is AeroWizard) {
+            throw TypeError("Help button is unsupported for Aero wizards", -2)
+        }
+        this.dwFlags |= Controls.PSH_HASHELP
+        return this
+    }
+
+    /**
+     * Removes the apply button. This is not supported for aero wizards.
+     * 
+     * @returns {this}
+     */
+    NoApplyButton() {
+        if (this is AeroWizard) {
+            throw TypeError("Cannot remove Apply button on Aero wizards", -2)
+        }
+        this.dwFlags |= Controls.PSH_NOAPPLYNOW
+        return this
+    }
+
+    /**
+     * Removes the context help, which is usually present on the caption bar of
+     * property sheets.
+     * 
+     * @returns {this}
+     */
+    NoContextHelp() {
+        if (this is AeroWizard) {
+            throw TypeError("Cannot remove context help on Aero wizards", -2)
+        }
+        this.dwFlags |= Controls.PSH_NOCONTEXTHELP
+        return this
+    }
+
+    /**
+     * Sets the property sheet to right-to-left reading order.
+     * 
+     * @returns {this}
+     */
+    RightToLeft() {
+        this.dwFlags |= Controls.PSH_RTLREADING
+        return this
+    }
+
+    /**
+     * Cleanup.
+     */
     __Delete() {
         if (this.pfnCallback) {
             CallbackFree(this.pfnCallback)

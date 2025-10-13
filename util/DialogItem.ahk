@@ -1,15 +1,15 @@
 #Include <AquaHotkey>
 #Include <Tanuki\util\AppendableBuffer>
-#Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGTEMPLATE>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGITEMTEMPLATE>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\WINDOW_STYLE>
-#Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\WINDOW_STYLE>
-#Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\Apis>
 
 /**
- * A dialog item.
+ * A control contained in a dialog box.
  * 
- * This is a variable-size buffer class.
+ * Valid dialog items *must* contain a window class, which is set either by
+ * using the {@link DialogItem#Type .Type()} method or one of the static
+ * constructors, e.g. {@link DialogItem.Text static Text()}.
+ * 
  * Use the `Build()` method to correctly write the fields into memory.
  */
 class DialogItem extends AppendableBuffer {
@@ -17,14 +17,61 @@ class DialogItem extends AppendableBuffer {
     static __New() => AquaHotkey.ApplyMixin(this, DLGITEMTEMPLATE)
 
     /**
-     * Creates a new dialog item, initializing the window style with
-     * `WS_CHILD`, `WS_VISIBLE` and `WS_TABSTOP`.
+     * Available control types. (see {@link DialogItem#Type})
+     * 
+     * @returns {Object}
+     */
+    static Type => {
+        Button:    0x0080,
+        Edit:      0x0081,
+        Static:    0x0082,
+        ListBox:   0x0083,
+        ScrollBar: 0x0084,
+        ComboBox:  0x0085
+    }
+
+    /**
+     * Creates a simple button.
+     * 
+     * @param   {String?}   Text     the text to be displayed
+     * @param   {Boolean?}  Default  whether the button is used as default
+     * @returns {DialogItem}
+     */
+    static Button(Text := "", Default := false) {
+        Ctl := this().Text(Text).Type(DialogItem.Type.Button)
+        Ctl.style |= WINDOW_STYLE.WS_TABSTOP
+
+        if (Default) {
+            Ctl.style |= WindowsAndMessaging.BS_DEFPUSHBUTTON
+        } else {
+            Ctl.style |= WindowsAndMessaging.BS_PUSHBUTTON
+        }
+        return Ctl
+    }
+
+    /**
+     * Creates a simple text control.
+     * 
+     * @param   {String}  Text  the text to be displayed in the control
+     * @returns {DialogItem}
+     */
+    static Text(Text) => this.Text(Text).Type(DialogItem.Type.Static)
+
+    /**
+     * Whether the dialog item has been properly written into the buffer.
+     * {@link DialogItem#Build}
+     * 
+     * @returns {Boolean}
+     */
+    IsBuilt := false
+
+    /**
+     * Creates a new `DialogItem`, initializing its style with `WS_CHILD` and
+     * `WS_VISIBLE`.
      */
     __New() {
         super.__New(DLGITEMTEMPLATE.sizeof, 0)
-        this.style := WINDOW_STYLE.WS_CHILD
-                    | WINDOW_STYLE.WS_VISIBLE
-                    | WINDOW_STYLE.WS_TABSTOP
+        this.Style := WINDOW_STYLE.WS_VISIBLE | WINDOW_STYLE.WS_CHILD
     }
 
     /**
@@ -73,9 +120,18 @@ class DialogItem extends AppendableBuffer {
      * @param   {Integer}  Id  control ID to be used
      * @returns {this}
      */
-    ControlId(Id) {
+    Id(Id) {
         this.id := Id
         return this
+    }
+
+    /**
+     * Default control type. Accessing this property throws an error.
+     */
+    __Type {
+        get {
+            throw UnsetError("unset control type")
+        }
     }
 
     /**
@@ -87,17 +143,17 @@ class DialogItem extends AppendableBuffer {
      * @param   {Integer/String}  ControlType  the type of control
      * @returns {this}
      */
-    ControlType(ControlType) {
+    Type(Type) {
         this.IsBuilt := false
-        if (!(ControlType is String) && !IsInteger(ControlType)) {
-            throw TypeError("Expected a String or UShort",, Type(ControlType))
-        }
-        return this.DefineProp("__ControlType", {
-            Value: (ControlType is String)
-                    ? ControlType
-                    : ControlType & 0xFFFF
-        })
+        return this.DefineProp("__Type", { Value: Type })
     }
+
+    /**
+     * Default control text (empty string).
+     * 
+     * @returns {String}
+     */
+    __Text => ""
 
     /**
      * Sets the initial text or resource identifier of the control.
@@ -107,11 +163,15 @@ class DialogItem extends AppendableBuffer {
      */
     Text(Text) {
         this.IsBuilt := false
-        if (!(Text is String)) {
-            throw TypeError("Expected a String",, Type(Text))
-        }
         return this.DefineProp("__Text", { Value: Text })
     }
+
+    /**
+     * Default empty data creation array.
+     * 
+     * @returns {Buffer}
+     */
+    __Data => Buffer(0, 0)
 
     /**
      * Sets additional raw data. which is used as `lParam` in `WM_CREATE`
@@ -124,25 +184,8 @@ class DialogItem extends AppendableBuffer {
      */
     Data(Mem, Size := Mem.Size) {
         this.IsBuilt := false
-        if (!IsInteger(Mem) && (!IsObject(Mem) || !HasProp(Mem, "Ptr"))) {
-            throw TypeError("Expected a pointer or Buffer object",,
-                            Type(Mem))
-        }
-        Buf := Buffer(Size & 0xFFFF, 0) ; max size is 0xFFFF
-
-        ; copy data
-        Loop (Size & 0xFFFF) {
-            Offset := A_Index - 1
-            Num := NumGet(Mem, Offset, "UChar")
-            NumPut("UChar", Num, Mem, Offset)
-        }
-        return this.DefineProp("__Data", { Value: Buf })
+        return this.DefineProp("__Data", { Value: ClipboardAll(Mem, Size) })
     }
-
-    /**
-     * Indicates whether the fields have been properly written into the buffer.
-     */
-    IsBuilt := false
 
     /**
      * Writes the additional fields into the buffer.
@@ -153,62 +196,25 @@ class DialogItem extends AppendableBuffer {
      * @returns {this}
      */
     Build() {
+        AddResource(Res := "") {
+            if (Res is Integer) {
+                this.AddUShort(0xFFFF).AddUShort(Res & 0xFFFF)
+            } else {
+                this.AddString(Res)
+            }
+        }
+
         if (this.IsBuilt) {
-            return this.Size
+            return this
         }
-        this.Offset := DLGITEMTEMPLATE.sizeof - 2
+        ; immediately after the struct, ignore packing
+        this.Pos := (DLGITEMTEMPLATE.sizeof - 2)
 
-        ; window class
-        switch {
-            case (!HasProp(this, "__ControlType")):
-                this.AppendUShort(0)
-            case (this.__ControlType is String):
-                this.AppendString(this.__ControlType)
-            case (this.__ControlType is Integer):
-                this.AppendUShort(0xFFFF).AppendUShort(this.__ControlType)
-            default:
-                throw TypeError("Expected an Integer or String",,
-                                Type(this.__ControlType))
-        }
+        AddResource(this.__Type) ; window class / atom
+        AddResource(this.__Text) ; control text
 
-        ; text
-        switch {
-            case (!HasProp(this, "__Text")):
-                this.AppendUShort(0)
-            case (this.__Text is String):
-                this.AppendString(this.__Text)
-            case (this.__Text is Integer):
-                this.AppendUShort(0xFFFF).AppendUShort(this.__Text)
-        }
-
-        ; data
-        if (HasProp(this, "__Data") && (this.__Data is Buffer)) {
-            Buf := this.__Data
-            this.AppendUShort(Buf.Size).AppendData(Buf.Ptr, Buf.Size)
-        } else {
-            this.AppendUShort(0)
-        }
-
-        ; DWORD alignment
-        if ((this.Ptr + this.Offset) & 3) {
-            this.AppendUShort(0)
-        }
-
-        this.Size := this.Offset
+        this.AddUShort(this.__Data.Size).AddData(this.__Data)
         this.IsBuilt := true
         return this
     }
-
-    /**
-     * Creates a new dialog button.
-     * 
-     * @returns {DialogItem}
-     */
-    static Button() {
-        Dlg := DialogItem()
-        Dlg.style |= WindowsAndMessaging.BS_PUSHBUTTON
-        return Dlg.ControlType(0x0080)
-    }
-
-    ; TODO do the rest
 }

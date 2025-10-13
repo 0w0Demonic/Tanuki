@@ -1,5 +1,4 @@
 #Include <AquaHotkey>
-#Include <Tanuki\util\AppendableBuffer>
 #Include <Tanuki\util\DialogItem>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGTEMPLATE>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGITEMTEMPLATE>
@@ -10,24 +9,32 @@
 /**
  * Dimensions and style of a dialog box.
  * 
- * This is a variable-size buffer class.
- * Use the `Build()` method to correctly write the fields into memory.
+ * This class is a wrapper around the `DLGTEMPLATE` struct. It uses a
+ * variable-sized buffer to specify additional options such as menu,
+ * window class, title, font settings and all of its dialog controls.
+ * 
+ * To ensure that fields have been properly written into memory, you must call
+ * `.Build()` first. `PropertySheet#Pages()` does this automatically.
  */
 class Dialog extends AppendableBuffer {
-    ; load all of the struct members as properties
+    ; load all mappings from `DLGTEMPLATE`
     static __New() => AquaHotkey.ApplyMixin(this, DLGTEMPLATE)
 
     /**
-     * Creates a new dialog template, and initializes the style with
-     * `WS_CHILD` and `WS_VISIBLE`.
+     * Whether the dialog has been properly written into the buffer.
+     * {@link Dialog#Build}
+     * 
+     * @type {Boolean}
+     */
+    IsBuilt := false
+
+    /**
+     * Creates a new `Dialog`, initializing its window style with `WS_CHILD`
+     * and `WS_VISIBLE`.
      */
     __New() {
         super.__New(DLGTEMPLATE.sizeof, 0)
-        this.style := WINDOW_STYLE.WS_CHILD
-                    | WINDOW_STYLE.WS_VISIBLE
-                    | WINDOW_STYLE.WS_CAPTION
-                    | WindowsAndMessaging.DS_MODALFRAME
-                    | WindowsAndMessaging.DS_SETFONT
+        this.Style := WINDOW_STYLE.WS_CHILD | WINDOW_STYLE.WS_VISIBLE
     }
 
     /**
@@ -106,6 +113,24 @@ class Dialog extends AppendableBuffer {
     }
 
     /**
+     * Default empty menu.
+     * 
+     * @returns {String}
+     */
+    __Menu => ""
+
+    /**
+     * Specifies a menu to be used by the dialog.
+     * 
+     * @param   {Integer/String}  Menu  the menu to be used by the dialog
+     * @returns {this}
+     */
+    Menu(Menu) {
+        this.IsBuilt := false
+        return this.DefineProp("__Menu", { Value: Menu })
+    }
+
+    /**
      * Sets the typeface and point size for the text in the dialog box.
      * 
      * @param   {String}   FontName  name of the typeface
@@ -121,6 +146,13 @@ class Dialog extends AppendableBuffer {
         this.style |= WindowsAndMessaging.DS_SETFONT
         return this.DefineProp("__FontSize", { Value: FontSize & 0xFFFF })
     }
+
+    /**
+     * Default window class (predefined dialog box class).
+     * 
+     * @returns {String}
+     */
+    __WindowClass => ""
 
     /**
      * Sets a custom window class of the dialog box. This can be the ordinal
@@ -139,9 +171,9 @@ class Dialog extends AppendableBuffer {
     }
 
     /**
-     * Lazy init for an array that holds controls.
+     * All controls contained in the dialog box (lazy init).
      * 
-     * @returns  {Array<DialogItem>}
+     * @returns {Array}
      */
     __Controls {
         get {
@@ -152,9 +184,16 @@ class Dialog extends AppendableBuffer {
     }
 
     /**
-     * Sets the title of the dialog.
+     * Default title of the fialog box (empty string).
      * 
-     * @param   {String}  Title  the dialog title
+     * @returns {String}
+     */
+    __Title => ""
+
+    /**
+     * Sets the title to be used by the dialog box.
+     * 
+     * @param   {String}  Title  the title to be used
      * @returns {this}
      */
     Title(Title) {
@@ -165,11 +204,15 @@ class Dialog extends AppendableBuffer {
     }
 
     /**
-     * Adds a new dialog control.
+     * Sets zero or more controls to be used by the dialog box.
      * 
-     * @param   {DialogItem*}
+     * @param   {Array<DialogItem>}  Controls  the controls to be used
+     * @returns {this}
      */
     Controls(Controls*) {
+        if (!Controls.Length) {
+            return this
+        }
         this.IsBuilt := false
         for Control in Controls {
             if (!(Control is DialogItem)) {
@@ -181,73 +224,44 @@ class Dialog extends AppendableBuffer {
     }
 
     /**
-     * Indicates whether fields are properly written into memory.
-     */
-    IsBuilt := false
-
-    /**
-     * Writes the menu, window class, title, font and controls into memory.
-     * 
-     * @returns {this}
+     * Builds this dialog by writing its fields into memory.
      */
     Build() {
+        AddResource(Res := "") {
+            if (Res is Integer) {
+                this.AddUShort(0xFFFF).AddUShort(Res & 0xFFFF)
+            } else {
+                this.AddString(Res)
+            }
+        }
+
         if (this.IsBuilt) {
-            return this.Size
+            return this
         }
 
-        this.Offset := DLGTEMPLATE.sizeof - 2
+        ; immediately after the struct, ignore packing
+        this.Pos := DLGTEMPLATE.sizeof - 2
 
-        ; menu
-        switch {
-            case (!HasProp(this, "__Menu")):
-                this.AppendUShort(0)
-            case (this.__Menu is Integer):
-                this.AppendUShort(0xFFFF).AppendUShort(this.__Menu)
-            case (this.__Menu is String):
-                this.AppendString(this.__Menu)
-            default:
-                throw TypeError("Expected an Integer or String",,
-                                Type(this.__Menu))
-        }
-
-        ; window class
-        switch {
-            case (!HasProp(this, "__WindowClass")):
-                this.AppendUShort(0)
-            case (this.__WindowClass is String):
-                this.AppendString(this.__WindowClass)
-            case (this.__WindowClass is Integer):
-                this.AppendUShort(0xFFFF).AppendUShort(this.__WindowClass)
-            default:
-                throw TypeError("Expected an Integer or String",,
-                                Type(this.__WindowClass))
-        }
-
-        ; title
-        if (HasProp(this, "__Title")) {
-            this.AppendString(this.__Title)
-        } else {
-            this.AppendUShort(0)
-        }
+        AddResource(this.__Menu)
+        AddResource(this.__WindowClass)
+        this.AddString(this.__Title)
 
         ; font
         if (HasProp(this, "__FontName") && HasProp(this, "__FontSize")) {
-            this.AppendUShort(this.__FontSize).AppendString(this.__FontName)
+            this.AddUShort(this.__FontSize).AddString(this.__FontName)
         }
 
         ; controls
         this.cdit := this.__Controls.Length
 
         for Ctl in this.__Controls {
+            this.Align(4)
             Ctl.Build()
-            Size := Ctl.Size
-            Mem := Ctl.Ptr
-
-            this.Align(4).AppendData(Mem, Size).Align(4)
+            this.AddData(Ctl.Ptr, Ctl.Pos)
+            this.Align(4)
         }
 
         this.IsBuilt := true
-        this.Size := this.Offset
         return this
     }
 }
