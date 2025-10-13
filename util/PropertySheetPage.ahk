@@ -1,5 +1,5 @@
-#Include <Tanuki\util\Dialog>
-#Include <Tanuki\util\DialogItem>
+#Include <Tanuki\wip\Dialog>
+#Include <Tanuki\wip\DialogItem>
 #Include <Tanuki\util\Buffers>
 
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETPAGEW>

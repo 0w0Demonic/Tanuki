@@ -1,13 +1,7 @@
 #Requires AutoHotkey v2.0
 
 class AppendableBuffer extends Buffer {
-    Offset {
-        get {
-            this.DefineProp("Offset", { Value: 0 })
-            return 0
-        }
-        set => this.DefineProp("Offset", { Value: Value })
-    }
+    Offset := 0
 
     ; TODO add more
     AppendUShort(Value) => this.Append("UShort", 2, Value)
@@ -29,13 +23,11 @@ class AppendableBuffer extends Buffer {
 
     AppendData(Mem, Size := Mem.Size) {
         this.EnsureCapacity(Size)
-        Offset := this.Offset
         Loop Size {
             Num := NumGet(Mem, A_Index - 1, "UChar")
-            NumPut("UChar", Num, this, Offset)
-            Offset++
+            NumPut("UChar", Num, this, this.Offset + (A_Index - 1))
         }
-        this.Offset := Offset
+        this.Offset += Size
         return this
     }
 
@@ -45,7 +37,7 @@ class AppendableBuffer extends Buffer {
         }
         Size := StrPut(Str, Encoding)
         this.EnsureCapacity(Size)
-        StrPut(Str, this.Ptr + this.Offset, Encoding)
+        StrPut(Str, this.Ptr + this.Offset)
         this.Offset += Size
         return this
     }
@@ -64,7 +56,6 @@ class AppendableBuffer extends Buffer {
      * 
      */
     EnsureCapacity(Size) {
-        Size := Abs(Size & Size)
         while ((this.Offset + Size) > this.Size) {
             this.Size *= 2
         }

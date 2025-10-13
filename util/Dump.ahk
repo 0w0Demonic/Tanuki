@@ -23,14 +23,15 @@ class Tanuki_Util_Dump extends AquaHotkey {
                     .JoinLine()
         }
     }
-    class Win32FixedArray {
-        static __New() {
-            if (VerCompare(A_AhkVersion, "<v2.1-alpha.10")) {
-                OutputDebug("[Aqua] unavailable: Win32FixedArray#Dump()")
-                this.Prototype.DeleteProp("Dump")
-            }
-        }
 
-        Dump() => this.Stream().Map(Elem => Elem.DumpProps()).Join("`r`n`r`n")
+    class ClipboardAll {
+        DumpAll() => Format("
+        (
+        -----
+        {}
+        -----
+
+        {}
+        )", this.HexDump(), this.DumpProps())
     }
 }

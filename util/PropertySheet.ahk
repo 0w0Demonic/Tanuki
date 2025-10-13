@@ -3,7 +3,6 @@
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETPAGEW>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\System\LibraryLoader\Apis>
-#Include <Tanuki\util\AppendableBuffer>
 #Include <Tanuki\util\Buffers>
 
 /**
@@ -107,7 +106,7 @@ class PropertySheet extends PROPSHEETHEADERW_V2 {
             if (!Handle) {
                 throw Error("Unable to create page #" . A_Index)
             }
-            Buf.AppendPtr(Handle)
+            Buf.AddPtr(Handle)
         }
 
         this.nPages := Pages.Length

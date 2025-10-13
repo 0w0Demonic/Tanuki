@@ -21,7 +21,7 @@ class DialogItem extends AppendableBuffer {
      * `WS_CHILD`, `WS_VISIBLE` and `WS_TABSTOP`.
      */
     __New() {
-        super.__New(DLGTEMPLATE.sizeof, 0)
+        super.__New(DLGITEMTEMPLATE.sizeof, 0)
         this.style := WINDOW_STYLE.WS_CHILD
                     | WINDOW_STYLE.WS_VISIBLE
                     | WINDOW_STYLE.WS_TABSTOP
@@ -156,7 +156,7 @@ class DialogItem extends AppendableBuffer {
         if (this.IsBuilt) {
             return this.Size
         }
-        this.Offset := DLGITEMTEMPLATE.sizeof
+        this.Offset := DLGITEMTEMPLATE.sizeof - 2
 
         ; window class
         switch {
@@ -186,6 +186,11 @@ class DialogItem extends AppendableBuffer {
             Buf := this.__Data
             this.AppendUShort(Buf.Size).AppendData(Buf.Ptr, Buf.Size)
         } else {
+            this.AppendUShort(0)
+        }
+
+        ; DWORD alignment
+        if ((this.Ptr + this.Offset) & 3) {
             this.AppendUShort(0)
         }
 
