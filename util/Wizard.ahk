@@ -58,7 +58,7 @@ class AeroWizard extends PropertySheet {
     }
 
     ; TODO handle PSH_HEADERBITMAP as resource
-    HeaderImage() {
+    HeaderImage(hBitmap) {
 
     }
 

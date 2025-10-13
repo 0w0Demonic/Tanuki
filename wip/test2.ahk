@@ -19,7 +19,7 @@ GetDlg(Title, Text) {
         .Title(Title)
         .Controls(
             DialogItem.Button(Text, true)
-                .Position(30, 30)
+                .Position(50, 50)
                 .Size(80, 20)
                 .Id(1)
         )
@@ -61,6 +61,8 @@ GetPage(Title, Text) {
 }
 
 Page := GetPage("Page 1", "Text 1")
+Page.dwFlags |= Controls.PSP_USEHEADERSUBTITLE | Controls.PSP_USEHEADERTITLE
+
 
 Wiz := Wizard97()
     .Title("Cool title")
@@ -78,9 +80,11 @@ Wiz := Wizard97()
 Wiz.dwFlags |= Controls.PSH_HEADER
 
 MsgBox(Wiz.dwFlags & Controls.PSH_WATERMARK)
+
 Wiz.dwFlags |= Controls.PSH_MODELESS
 
 Bitmap := LoadPicture("C:\Users\roemer\Pictures\graph.bmp")
+Wiz.HeaderImage(Bitmap)
 
 hPropSheet := Controls.PropertySheetW(Wiz)
 
