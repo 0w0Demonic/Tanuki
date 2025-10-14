@@ -36,11 +36,9 @@ GetDlg(Title, Text) {
 class DialogProc extends WindowProcedure {
     static __New() {
         super.__New(&Msg, &Ntf, &Cmd)
-        Ntf(Controls.PSN_HELP, (*) => ToolTip("help!"))
-        Ntf(Controls.PSN_QUERYCANCEL, (*) => ToolTip("cancel!"))
+        Cmd(1, WindowsAndMessaging.BN_CLICKED, (*) => ToolTip("click!"))
 
-        Msg(WindowsAndMessaging.WM_CLOSE, (*) => ToolTip("close!"))
-        Cmd(WindowsAndMessaging.BN_CLICKED, (*) => ToolTip("click!"))
+        Ntf(0, Controls.PSN_QUERYCANCEL, (*) => ToolTip("cancel!"))
     }
 }
 

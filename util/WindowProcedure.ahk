@@ -10,9 +10,10 @@
  * The class can be used directly or subclassed to build reusable window
  * procedures.
  * 
- * At its core, {@link WindowProcedure#Call} is responsible for dispatching
- * all of the messages, notifications and commands set up by the user.
- * To apply this method as function pointer, 
+ * At its core, {@link WindowProcedure#Call `Call()`} is responsible for
+ * dispatching all of the messages, notifications and commands set by the
+ * user. To apply this method as function pointer, use
+ * {@link WindowProcedure#CallbackCreate `CallbackCreate()`}.
  */
 class WindowProcedure {
     ;@region Construction
@@ -26,26 +27,26 @@ class WindowProcedure {
      * @example
      * class DialogProc extends WindowProcedure {
      *     static __New() {
-     *         super.__New(&Msg, &Notif, &Cmd)
+     *         super.__New(&Msg, &Ntf, &Cmd)
      *         Msg(WM_MOVE, (*) => ToolTip("moving..."))
      *         Cmd(BN_CLICKED, "Click")
      *     }
      *     Click(Hwnd) => MsgBox("button clicked!")
      * }
-     * @param   {VarRef<Func>?}  Msg    (out) `OnMessage()` method
-     * @param   {VarRef<Func>?}  Notif  (out) `OnNotify()` method
-     * @param   {VarRef<Func>?}  Cmd    (out) `OnCommand()` method
+     * @param   {VarRef<Func>?}  Msg  (out) `OnMessage()` method
+     * @param   {VarRef<Func>?}  Ntf  (out) `OnNotify()` method
+     * @param   {VarRef<Func>?}  Cmd  (out) `OnCommand()` method
      */
-    static __New(&Msg?, &Notif?, &Cmd?) {
+    static __New(&Msg?, &Ntf?, &Cmd?) {
         static CreateGetter(Value) => { Get: (_) => Value }
         static Nop(*) => false
 
         static Properties := Array("Messages", "Notifs", "Commands")
         static Define := {}.DefineProp
 
-        Msg   := ObjBindMethod(this.Prototype, "OnMessage")
-        Notif := ObjBindMethod(this.Prototype, "OnNotify")
-        Cmd   := ObjBindMethod(this.Prototype, "OnCommand")
+        Msg := ObjBindMethod(this.Prototype, "OnMessage")
+        Ntf := ObjBindMethod(this.Prototype, "OnNotify")
+        Cmd := ObjBindMethod(this.Prototype, "OnCommand")
 
         if (this == WindowProcedure) {
             for Property in Properties {
@@ -69,10 +70,10 @@ class WindowProcedure {
      * @param   {VarRef<Func>?}  Notif  (out) `OnNotify()` method
      * @param   {VarRef<Func>?}  Cmd    (out) `OnCommand()` method
      */
-    __New(&Msg?, &Notif?, &Cmd?) {
-        Msg   := ObjBindMethod(this, "OnMessage")
-        Notif := ObjBindMethod(this, "OnNotify")
-        Cmd   := ObjBindMethod(this, "OnCommand")
+    __New(&Msg?, &Ntf?, &Cmd?) {
+        Msg := ObjBindMethod(this, "OnMessage")
+        Ntf := ObjBindMethod(this, "OnNotify")
+        Cmd := ObjBindMethod(this, "OnCommand")
     }
 
     /**
@@ -83,12 +84,12 @@ class WindowProcedure {
      * 
      * @returns {Integer}
      */
-    CreateCallback() => CallbackCreate(this.Call, "Fast", 4)
+    CallbackCreate() => CallbackCreate(this.Call, "Fast", 4)
     ;@endregion
 
     ;@region Entry Point
     /**
-     * Dispatch entry point. Use {@link WindowProcedure#CreateCallback} to
+     * Dispatch entry point. Use {@link WindowProcedure#CallbackCreate} to
      * create a function pointer.
      * 
      * @param   {Integer}  Hwnd    a handle to the window
@@ -100,15 +101,25 @@ class WindowProcedure {
     Call(Hwnd, Msg, wParam, lParam) {
         switch (Msg) {
             ; WM_NOTIFY
-            case 0x0000004E:
-                ; ((NMHDR)lParam)->code
-                return (this.Notifs)[NumGet(lParam, 16, "UInt")](Hwnd, lParam)
+            case 0x004E:
+                ControlId := NumGet(lParam + 8, "Ptr")
+                Code := NumGet(lParam + 16, "UInt")
+                ControlHwnd := NumGet(lParam, "Ptr")
+                if (Fn := (this.Notifs).Get(ControlId << 32 | Code, 0)) {
+                    return Fn(ControlHwnd, lParam)
+                }
+                return (this.Notifs)[Code](ControlHwnd, lParam)
             ; WM_COMMAND
-            case 0x00000111:
-                ; upper WORD as control-specific command
-                return (this.Commands)[wParam >>> 16](Hwnd)
+            case 0x0111:
+                if (Fn := (this.Commands).Get(wParam, 0)) {
+                    return Fn(lParam)
+                }
+                return (this.Commands)[wParam >>> 16](lParam)
             default:
-                return (this.Messages)[Msg](wParam, lParam, Msg, Hwnd)
+                if (Fn := (this.Messages).Get(Msg, 0)) {
+                    return Fn(wParam, lParam, Msg, Hwnd)
+                }
+                return (this.Messages)[0](wParam, lParam, Msg, Hwnd)
         }
     }
     ;@endregion
@@ -122,16 +133,13 @@ class WindowProcedure {
      *     ; ...
      * }
      * 
-     * @param   {Integer}      Msg       the message to register a callback for
-     * @param   {Func/String}  Callback  the function to be called/method name
+     * @param   {Integer}      Msg        the message to register a callback for
+     * @param   {Func/String}  Callback   the function to be called/method name
      * @returns {this}
      */
     OnMessage(Msg, Callback) {
-        Callback := this._Validate(Msg, Callback)
-        if (!ObjHasOwnProp(this, "Messages")) {
-            DerivingMap := MapChain.Extend(this.Message)
-            ({}.DefineProp)(this, "Messages", { Value: DerivingMap })
-        }
+        Callback := this._Validate(Callback, Msg, 32)
+        this._CreateIfAbsent("Messages")
         (this.Messages).Set(Msg, Callback)
         return this
     }
@@ -144,17 +152,15 @@ class WindowProcedure {
      *     ; ...
      * }
      * 
-     * @param   {Integer}      Msg       the message to register a callback for
-     * @param   {Func/String}  Callback  the function to be called/method name
+     * @param   {Integer}      ControlId  control ID of the control
+     * @param   {Integer}      Msg        the message to register a callback for
+     * @param   {Func/String}  Callback   the function to be called/method name
      * @returns {this}
      */
-    OnNotify(Notif, Callback) {
-        Callback := this._Validate(Notif, Callback)
-        if (!ObjHasOwnProp(this, "Messages")) {
-            DerivingMap := MapChain.Extend(this.Message)
-            ({}.DefineProp)(this, "Messages", { Value: DerivingMap })
-        }
-        (this.Notifs).Set(Notif, Callback)
+    OnNotify(ControlId, Notif, Callback) {
+        Callback := this._Validate(Callback, Notif, 32, ControlId)
+        this._CreateIfAbsent("Notifications")
+        (this.Notifs).Set((ControlId << 32) | Notif, Callback)
         return this
     }
 
@@ -166,24 +172,31 @@ class WindowProcedure {
      *     ; ...
      * }
      * 
-     * @param   {Integer}      Msg       the message to register a callback for
-     * @param   {Func/String}  Callback  the function to be called/method name
+     * @param   {Integer}      ControlId  control ID of the control
+     * @param   {Integer}      Msg        the message to register a callback for
+     * @param   {Func/String}  Callback   the function to be called/method name
      * @returns {this}
      */
-    OnCommand(Cmd, Callback) {
-        Callback := this._Validate(Cmd, Callback)
-        if (!ObjHasOwnProp(this, "Messages")) {
-            DerivingMap := MapChain.Extend(this.Message)
-            ({}.DefineProp)(this, "Messages", { Value: DerivingMap })
-        }
-        (this.Commands).Set(Cmd, Callback)
+    OnCommand(ControlID, Cmd, Callback) {
+        Callback := this._Validate(Callback, Cmd, 16, ControlId)
+        this._CreateIfAbsent("Commands")
+        (this.Commands).Set(Cmd << 16 | ControlID, Callback)
         return this
     }
 
     ; param validation for `OnMessage`, `OnNotify`, `OnCommand`
-    _Validate(Num, Callback) {
+    _Validate(Callback, Num, NumSizeBits, ControlId := 0) {
         if (!IsInteger(Num)) {
             throw TypeError("Expected an Integer",, Type(Callback))
+        }
+        if (Num >>> NumSizeBits) {
+            throw ValueError("Must be a " . NumSizeBits "-bit value",, Num)
+        }
+        if (!IsInteger(ControlId)) {
+            throw TypeError("Expected an Integer",, Type(ControlId))
+        }
+        if (ControlId >>> 16) {
+            throw ValueError("Must be a 16-bit value",, ControlId)
         }
         if (Callback is String) {
             if (!HasProp(this, Callback)) {
@@ -193,6 +206,14 @@ class WindowProcedure {
         }
         GetMethod(Callback)
         return Callback
+    }
+
+    ; if absent, creates an own map that inherits from the parent class's map
+    _CreateIfAbsent(PropertyName) {
+        if (!ObjHasOwnProp(this, PropertyName)) {
+            DerivingMap := MapChain.Extend(this.Messages)
+            ({}.DefineProp)(this, PropertyName, { Value: DerivingMap })
+        }
     }
     ;@endregion
 }
