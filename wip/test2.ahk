@@ -31,32 +31,25 @@ GetDlg(Title, Text) {
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMHDR>
 #Include <AhkWin32Projection\Windows\Win32\Graphics\Gdi\Apis>
 
+#Include <Tanuki\util\WindowProcedure>
+
+class DialogProc extends WindowProcedure {
+    static __New() {
+        super.__New(&Msg, &Ntf, &Cmd)
+        Ntf(Controls.PSN_HELP, (*) => ToolTip("help!"))
+        Ntf(Controls.PSN_QUERYCANCEL, (*) => ToolTip("cancel!"))
+
+        Msg(WindowsAndMessaging.WM_CLOSE, (*) => ToolTip("close!"))
+        Cmd(WindowsAndMessaging.BN_CLICKED, (*) => ToolTip("click!"))
+    }
+}
+
+Proc := DialogProc()
+
 GetPage(Title, Text) {
     return PropertySheetPage()
         .Dialog(GetDlg(Title, Text))
-        .DialogProc((Hwnd, Msg, wParam, lParam) {
-            if (Msg == WindowsAndMessaging.WM_NOTIFY) {
-                Hdr := NMHDR(lParam)
-                if (Hdr.Code == Controls.PSN_HELP) {
-                    MsgBox("Help!")
-                }
-                if (Hdr.Code == Controls.PSN_QUERYCANCEL) {
-                    MsgBox("Want cancel!")
-                    return true
-                }
-            }
-
-            if (Msg == WindowsAndMessaging.WM_CLOSE) {
-                return false
-            }
-            if (Msg != WindowsAndMessaging.WM_COMMAND) {
-                return false
-            }
-            if ((wParam >>> 16) == WindowsAndMessaging.BN_CLICKED) {
-                MsgBox(lParam . " was clicked!")
-                return false
-            }
-        })
+        .DialogProc(ObjBindMethod(Proc))
         .HeaderTitle("Title", "Subtitle")
 }
 
@@ -78,9 +71,6 @@ Wiz := Wizard97()
 #Include <Tanuki\util\Dump>
 
 Wiz.dwFlags |= Controls.PSH_HEADER
-
-MsgBox(Wiz.dwFlags & Controls.PSH_WATERMARK)
-
 Wiz.dwFlags |= Controls.PSH_MODELESS
 
 Bitmap := LoadPicture("C:\Users\roemer\Pictures\graph.bmp")

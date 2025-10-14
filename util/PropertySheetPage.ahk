@@ -48,7 +48,7 @@ class PropertySheetPage extends PROPSHEETPAGEW {
      * @returns {this}
      */
     DialogProc(Fn) {
-        this.pfnDlgProc := CallbackCreate(GetMethod(Fn), "Fast")
+        this.pfnDlgProc := CallbackCreate(GetMethod(Fn), "Fast", 4)
         return this
     }
 
