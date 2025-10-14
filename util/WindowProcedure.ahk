@@ -114,7 +114,7 @@ class WindowProcedure {
                 if (Fn := (this.Commands).Get(wParam, 0)) {
                     return Fn(lParam)
                 }
-                return (this.Commands)[wParam >>> 16](lParam)
+                return (this.Commands)[wParam & 0xFFFF0000](lParam)
             default:
                 if (Fn := (this.Messages).Get(Msg, 0)) {
                     return Fn(wParam, lParam, Msg, Hwnd)
@@ -133,7 +133,7 @@ class WindowProcedure {
      *     ; ...
      * }
      * 
-     * @param   {Integer}      Msg        the message to register a callback for
+     * @param   {Integer}      Msg        message ID, `0` for any
      * @param   {Func/String}  Callback   the function to be called/method name
      * @returns {this}
      */
@@ -152,7 +152,7 @@ class WindowProcedure {
      *     ; ...
      * }
      * 
-     * @param   {Integer}      ControlId  control ID of the control
+     * @param   {Integer}      ControlId  control ID of the control, `0` for any
      * @param   {Integer}      Msg        the message to register a callback for
      * @param   {Func/String}  Callback   the function to be called/method name
      * @returns {this}
@@ -172,7 +172,7 @@ class WindowProcedure {
      *     ; ...
      * }
      * 
-     * @param   {Integer}      ControlId  control ID of the control
+     * @param   {Integer}      ControlId  control ID of the control, `0` for any
      * @param   {Integer}      Msg        the message to register a callback for
      * @param   {Func/String}  Callback   the function to be called/method name
      * @returns {this}
