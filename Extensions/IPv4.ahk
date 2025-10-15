@@ -1,9 +1,11 @@
 #Include <AquaHotkey>
-#Include <Tanuki\Event>
+#Include <Tanuki\Util\Event>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMIPADDRESS>
+#Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\Apis>
 
 /**
+ * 
  * A wrapper for the `SysIpAddress32` control used for selecting IPv4 addresses,
  * directly integrated as `GUI.IPv4` class. This class is automatically added
  * as static nested class to the `Gui` type.
@@ -17,8 +19,13 @@
  *    |- IsBlank { get; }
  *    |- Focus(Index)
  *    |- SetRange(Index, Lo := 0, Hi := 255)
- *    `- OnEvent(EventName, Callback, AddRemove?)
+ *    `- OnFieldChange(Fn, Opt?)
  * ```
+ * 
+ * (Comctl32.dll v4.71+)
+ * 
+ * See also:
+ * - [About IP Address Controls](https://learn.microsoft.com/en-us/windows/win32/controls/ip-address-controls)
  */
 class Tanuki_IPv4 extends AquaHotkey {
 class Gui {
@@ -109,7 +116,7 @@ class Gui {
                         throw TypeError("Expected an Integer",, Type(Byte))
                     }
                     if ((Byte < 0) || (Byte > 255)) {
-                        throw ValueError("Expected (0 <= Byte <= 255)",, Byte)
+                        throw ValueError("Must be a UChar value",, Byte)
                     }
 
                     IPAddr <<= 8
@@ -163,7 +170,8 @@ class Gui {
         }
 
         /**
-         * Registers a callback function to be called when the 
+         * Registers a function to be called when the user changes
+         * a field in the control or moves from one field to another.
          * 
          * @param   {Func}      Fn   the function to be called
          * @param   {Integer?}  Opt  add/remove the callback
@@ -171,8 +179,54 @@ class Gui {
          */
         OnFieldChange(Fn, Opt?) {
             GetMethod(Fn)
-            return Gui.Event.OnNotify(this, Controls.IPN_FIELDCHANGED,
-                (IpAddrCtl, lParam) => Fn(IpAddrCtl, NMIPADDRESS(lParam)))
+            return Gui.Event.OnNotify(
+                    this, Controls.IPN_FIELDCHANGED,
+                    (IpAddrCtl, lParam) => Fn(IpAddrCtl, NMIPADDRESS(lParam)))
+        }
+
+        /**
+         * Registers a function to be called when the IP address control gains
+         * the keyboard focus.
+         * 
+         * @param   {Func}      Fn   the function to be called
+         * @param   {Integer?}  Opt  add/remove the callback
+         * @returns {Gui.Event}
+         */
+        OnFocus(Fn, Opt?) {
+            GetMethod(Fn)
+            return Gui.Event.OnCommand(
+                    this, WindowsAndMessaging.EN_SETFOCUS,
+                    Fn, Opt?)
+        }
+
+        /**
+         * Registers a function to be called when the IP address control loses
+         * the keyboard focus.
+         * 
+         * @param   {Func}      Fn   the function to be called
+         * @param   {Integer?}  Opt  add/remove the callback
+         * @returns {Gui.Event}
+         */
+        OnFocusLost(Fn, Opt?) {
+            GetMethod(Fn)
+            return Gui.Event.OnCommand(
+                    this, WindowsAndMessaging.EN_KILLFOCUS,
+                    Fn, Opt?)
+        }
+
+        /**
+         * Registers a function to be called when the IP address control
+         * changes.
+         * 
+         * @param   {Func}      Fn   the function to be called
+         * @param   {Integer?}  Opt  add/remove the callback
+         * @returns {Gui.Event}
+         */
+        OnChange(Fn, Opt?) {
+            GetMethod(Fn)
+            return Gui.Event.OnCommand(
+                    this, WindowsAndMessaging.EN_CHANGE,
+                    Fn, Opt?)
         }
     }
 } ; class Gui

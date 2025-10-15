@@ -1,5 +1,5 @@
 #Requires AutoHotkey v2.0
-#Include <Tanuki\util\MapChain>
+#Include <Tanuki\Util\MapChain>
 /**
  * A reusable framework for dispatching window messages and notifications.
  * 

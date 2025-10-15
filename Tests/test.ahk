@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 #Include <AquaHotkey>
-#Include <Tanuki\wip\Dialog>
+#Include <Tanuki\Gui\Dialog>
 
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGTEMPLATE>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGITEMTEMPLATE>

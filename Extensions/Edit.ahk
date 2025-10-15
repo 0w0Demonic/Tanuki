@@ -8,7 +8,6 @@
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\EDIT_CONTROL_FEATURE>
 #Include <AhkWin32Projection\Windows\Win32\Foundation\RECT>
-
 /**
  * Extension class for Gui.Edit.
  * 
@@ -501,10 +500,8 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * @returns {Integer}
      */
     LineIndex[Index := EditGetCurrentLine(this)] {
-        get {
-            Result := SendMessage(Controls.EM_LINEINDEX, Index - 1, 0, this)
-            return Result & 0xFFFFFFFF
-        }
+        get => SendMessage(Controls.EM_FILEINDEX, Index - 1, 0, this)
+                    & 0xFFFFFFFF
     }
 
     /**
@@ -515,10 +512,8 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * @returns {Integer}
      */
     LogicalLineIndex[Index := EditGetCurrentLine(this)] {
-        get {
-            Result := SendMessage(Controls.EM_FILELINEINDEX, Index - 1, 0, this)
-            return Result & 0xFFFFFFFF
-        }
+        get => SendMessage(Controls.EM_FILELINEINDEX, Index - 1, 0, this)
+                    & 0xFFFFFFFF
     }
 
     /**
@@ -563,9 +558,10 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @returns {Integer}
      */
-    FirstVisibleLine => (
-        SendMessage(Controls.EM_GETFIRSTVISIBLELINE, 0, 0, this) + 1
-    )
+    FirstVisibleLine {
+        get => (SendMessage(Controls.EM_GETFIRSTVISIBLELINE, 0, 0, this) + 1)
+    }
+    
     ;@endregion
 
     ;@region Area + Margin
@@ -722,6 +718,7 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * the search item.
      */
     SearchWeb() {
+        this.EnableWebSearch()
         SendMessage(Controls.EM_SEARCHWEB, 0, 0, this)
     }
     ;@endregion
@@ -736,9 +733,7 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      */
     EndOfLine {
         get => SendMessage(Controls.EM_GETENDOFLINE, 0, 0, this)
-        set {
-            SendMessage(Controls.EM_SETENDOFLINE, value, 0, this)
-        }
+        set => SendMessage(Controls.EM_SETENDOFLINE, value, 0, this)
     }
 
     /**
@@ -763,7 +758,8 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
     }
 
     /**
-     * Gets and changes the password character of the edit control.
+     * Gets and changes the password character of the edit control. An empty
+     * strings means that no password character is being used.
      * 
      * @param   {String}  value  the character to be used, else an empty string
      * @returns {String}
@@ -773,7 +769,7 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
             Result := SendMessage(Controls.EM_GETPASSWORDCHAR, 0, 0, this)
             return (Result) ? Chr(Result) : ""
         }
-        set => this.Opt("Password" . value)
+        set => SendMessage(Controls.EM_SETPASSWORDCHAR, Ord(value), 0, this)
     }
 
     /**
@@ -847,11 +843,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnFocus(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_SETFOCUS, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.EN_SETFOCUS,
+                Fn, Opt?)
     }
 
     /**
@@ -859,11 +856,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnFocusLost(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_KILLFOCUS, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.EN_KILLFOCUS,
+                Fn, Opt?)
     }
 
     /**
@@ -871,11 +869,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnChange(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_CHANGE, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.EN_CHANGE,
+                Fn, Opt?)
     }
 
     /**
@@ -884,11 +883,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnUpdate(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_UPDATE, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.EN_UPDATE,
+                Fn, Opt?)
     }
 
     /**
@@ -897,11 +897,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnMemoryError(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_ERRSPACE, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.EN_ERRSPACE,
+                Fn, Opt?)
     }
 
     /**
@@ -909,11 +910,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnMaxText(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_MAXTEXT, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.EN_MAXTEXT,
+                Fn, Opt?)
     }
 
     /**
@@ -921,11 +923,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnHScroll(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_HSCROLL, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.EN_HSCROLL,
+                Fn, Opt?)
     }
 
     /**
@@ -933,11 +936,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnVScroll(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_VSCROLL, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.EN_VSCROLL,
+                Fn, Opt?)
     }
 
     /**
@@ -946,11 +950,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnAlignLeftToRight(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_ALIGN_LTR_EC, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.EN_ALIGN_LTR_EC,
+                Fn, Opt?)
     }
     
     /**
@@ -959,11 +964,12 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnAlignRightToLeft(Fn, Opt?) {
-        this.OnCommand(WindowsAndMessaging.EN_ALIGN_RTL_EC, Fn, Opt?)
-        return this
+        return Gui.Event.OnCommand(
+            this, WindowsAndMessaging.EN_ALIGN_RTL_EC,
+            Fn, Opt?)
     }
 
     /**
@@ -979,14 +985,13 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnBeforePaste(Fn, Opt?) {
+        this.EnablePasteNotifs()
         return Gui.Event.OnNotify(
-                this,
-                WindowsAndMessaging.EN_BEFORE_PASTE,
-                (EditCtl, lParam) => Fn(EditCtl, NMHDR(lParam)),
-                Opt?)
+                this, WindowsAndMessaging.EN_BEFORE_PASTE,
+                (EditCtl, lParam) => Fn(EditCtl, NMHDR(lParam)), Opt?)
     }
 
     /**
@@ -998,14 +1003,13 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnAfterPaste(Fn, Opt?) {
+        this.EnablePasteNotifs()
         return Gui.Event.OnNotify(
-                this,
-                WindowsAndMessaging.EN_AFTER_PASTE,
-                (EditCtl, lParam) => Fn(EditCtl, NMHDR(lParam)),
-                Opt?)
+                this, WindowsAndMessaging.EN_AFTER_PASTE,
+                (EditCtl, lParam) => Fn(EditCtl, NMHDR(lParam)), Opt?)
     }
 
     /**
@@ -1017,14 +1021,13 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnWebSearch(Fn, Opt?) {
+        this.EnableWebSearch()
         Gui.Event.OnNotify(
-                this,
-                Controls.EN_SEARCHWEB,
-                (EditCtl, lParam) => Fn(EditCtl, NMSEARCHWEB(lParam)),
-                Opt?)
+                this, Controls.EN_SEARCHWEB,
+                (EditCtl, lParam) => Fn(EditCtl, NMSEARCHWEB(lParam)), Opt?)
     }
 }
 ;@endregion

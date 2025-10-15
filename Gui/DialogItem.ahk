@@ -1,5 +1,5 @@
 #Include <AquaHotkey>
-#Include <Tanuki\util\AppendableBuffer>
+#Include <Tanuki\Util\AppendableBuffer>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGITEMTEMPLATE>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\WINDOW_STYLE>
 

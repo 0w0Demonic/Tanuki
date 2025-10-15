@@ -1,5 +1,4 @@
 #Include <AquaHotkey>
-
 /**
  * Extension class that introduces the `Gui.Event` class, a simple wrapper
  * for Gui events.

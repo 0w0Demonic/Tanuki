@@ -1,5 +1,5 @@
 #Include <AquaHotkey>
-#Include <Tanuki\Event>
+#Include <Tanuki\Util\Event>
 #Include <AhkWin32Projection\Windows\Win32\Foundation\SIZE>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMHDR>
@@ -160,7 +160,8 @@ class Tanuki_Button extends AquaHotkey_MultiApply {
      * @returns {Gui.Event}
      */
     OnClick(Fn, Opt?) {
-        return Gui.Event.OnCommand(this, WindowsAndMessaging.BN_CLICKED,
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.BN_CLICKED,
                 Fn, Opt?)
     }
 
@@ -173,7 +174,8 @@ class Tanuki_Button extends AquaHotkey_MultiApply {
      */
     OnDoubleClick(Fn, Opt?) {
         ControlSetStyle("+" . WindowsAndMessaging.BS_NOTIFY, this)
-        return Gui.Event.OnCommand(this, WindowsAndMessaging.BN_DOUBLECLICKED,
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.BN_DOUBLECLICKED,
                 Fn, Opt?)
     }
 
@@ -186,7 +188,8 @@ class Tanuki_Button extends AquaHotkey_MultiApply {
      */
     OnFocus(Fn, Opt?) {
         ControlSetStyle("+" . WindowsAndMessaging.BS_NOTIFY, this)
-        return Gui.Event.OnCommand(this, WindowsAndMessaging.BN_SETFOCUS,
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.BN_SETFOCUS,
                 Fn, Opt?)
     }
 
@@ -199,7 +202,8 @@ class Tanuki_Button extends AquaHotkey_MultiApply {
      */
     OnFocusLost(Fn, Opt?) {
         ControlSetStyle("+" . WindowsAndMessaging.BS_NOTIFY, this)
-        return Gui.Event.OnCommand(this, WindowsAndMessaging.BN_KILLFOCUS,
+        return Gui.Event.OnCommand(
+                this, WindowsAndMessaging.BN_KILLFOCUS,
                 Fn, Opt?)
     }
 
@@ -219,10 +223,8 @@ class Tanuki_Button extends AquaHotkey_MultiApply {
     OnHover(Fn, Opt?) {
         GetMethod(Fn)
         return Gui.Event.OnNotify(
-                this,
-                Controls.BCN_HOTITEMCHANGE,
-                (GuiObj, lParam) => Fn(GuiObj, NMBCHOTITEM(lParam)),
-                Opt?)
+                this, Controls.BCN_HOTITEMCHANGE,
+                (GuiObj, lParam) => Fn(GuiObj, NMBCHOTITEM(lParam)), Opt?)
     }
     ;@endregion
 }

@@ -1,5 +1,4 @@
-#Requires AutoHotkey 2.0
-
+#Requires AutoHotkey v2
 /**
  * Buffer utilities.
  */

@@ -1,85 +1,90 @@
 # Tanuki
 
 ```
-______________________      /\ /\
-                - o x |    <_'u'_>
-_|_ _ __      |/ o |  |   <^0, .o^>
- |_(_|| | |_| |\ | .  | <((({ ()}
-                             \/\/
+____________________      /\ /\
+              - o x |    <_'u'_>
+_|_ _ __    |/ o |  |   <^0, .o^>
+ |_(_|| ||_||\ | .  | <((({ ()}
+                           \/\/
 ```
 
 ## AutoHotkey `Gui` on Steroids
 
-Tanuki is a Gui library for AutoHotkey v2 that *directly upgrades* the native
-`Gui` type and its controls with deep Win32 integration.
-
-No wrappers, no boilerplate. Just features that feel like they were there from
-day one.
+Tanuki is a Win32-powered GUI library for AutoHotkey v2 that *directly extends*
+the built-in `Gui` type and its controls. Features that feel like they were
+already there from day one, without wrappers and without hacks.
 
 ## Features at a Glance
 
-- Extensions for built-in Gui controls
-- Win32 events and notifications (e.g. paste notifications for Edit controls)
-- Very modular design
+- A broad range of extensions for built-in Gui controls
+- Support for Win32 events and notifications
+- GUIs such as dialogs, property sheets and wizards
+- Modular and feature-driven design
 - Powered by [AquaHotkey](https://www.github.com/0w0Demonic/AquaHotkey) for
   painless class prototyping
 - Standardized Win32 API access with the help of
   [AhkWin32Projection](https://www.github.com/holy-tao/AhkWin32Projection)
-  (no more manual structs)
 
-### Example: Clipboard Paste Notifications (Windows 10+)
+## The Vision
 
-```ahk
-#Include <Tanuki\Edit>
+Tanuki makes working with Win32 fun.
 
-g := Gui()
-e := g.AddEdit()
-
-; enables paste notifications
-e.EnablePasteNotifs()
-
-; catch clipboard paste notifications
-e.OnBeforePaste(BeforePaste)
-e.OnAfterPaste(AfterPaste)
-g.Show()
-
-BeforePaste(EditCtl, lParam) {
-    Hdr := NMHDR(lParam) ; undocumented struct
-    MsgBox("pasting: " . A_Clipboard)
-    return true ; return `false` to cancel paste
-}
-
-AfterPaste(EditCtl, lParam) {
-    Hdr := NMHDR(lParam)
-    MsgBox("pasting: " . A_Clipboard)
-}
-```
-
-### Another Example: New `Gui.CommandLink` Class
-
-```ahk
-#Include <Tanuki\CommandLink>
-
-g := Gui()
-cl := g.AddCommandLink("w350 h100", "Command Link Button",
-        "A special type of button with a lightweight appearance")
-g.Show()
-```
+Things that are normally too complex or tedious are now just part of the toolkit.
+Imagine the possibilities of being open to the Win32 GUI API in its entirety,
+all while staying readable, concise, and modular.
 
 ## Why it Matters
 
-There are other Gui libraries that add their features in the form of
-properties - quick shoutout to [GuiEnhancerKit](https://github.com/nperovic/GuiEnhancerKit/blob/main/GuiEnhancerKit.ahk),
-it's an awesome library. Tanuki goes a little further by going all-in on class prototyping:
+Most GUI libraries in AutoHotkey stop at the surface level. They make simple
+things simpler, and leave the real depth of Win32 locked away behind
+hand-crafted DLL calls and structs. It's an enormous barrier that hinders the
+library from making any progress after it has grown to a certain size.
 
-- Features feel native, not bolted on
-- Consistent, modular, and extensible design
-- Built on top of solid libraries that remove the pain of dealing with Win32 directly
+Tanuki breaks this barrier and dives all the way down into the rabbit hole that
+is Win32. By standardizing how Win32 data and events are exposed, it makes some
+otherwise *impossible* GUI features possible.
+
+### 1. Standardized Win32 Interop
+
+Thanks to [AhkWin32Projection](https://www.githuv.com/holy-tao/AhkWin32Projection),
+you can forget about manual structs, message constants and raw DLL calls.
+It lets you concentrate on what's important and makes working with Win32
+actually fun.
+
+### 2. Designed for Growth
+
+*A GUI library is never "done".*
+
+When it comes to GUI libraries, there's always more features you can add.
+Tanuki embraces this type of growth by making it easy to write your own
+extensions, and giving you a wide range of utility classes.
+
+### 3. Class Prototyping
+
+Tanuki takes huge advantage of class prototyping, one of the most underrated
+powers of AutoHotkey. Features are baked directly into `Gui` and its
+`Gui.Control` classes:
+
+```ahk
+g := Gui()
+e := g.AddEdit()
+
+e.OnBeforePaste(BeforePaste)
+e.OnAfterPaste((*) => MsgBox("successful clipboard paste."))
+g.Show()
+
+BeforePaste(EditCtl, lParam) {
+    MsgBox("pasting: " . A_Clipboard)
+    return true ; return `false` to cancel paste
+}
+```
+
+Powered by [AquaHotkey](https://www.github.com/0w0Demonic/AquaHotkey), so you
+know its serious business.
 
 ## Getting Started
 
-To get started, first clone the repository, preferably into one of the
-AutoHotkey lib folders.
+To get started, clone the repository into one of the AutoHotkey lib folders.
 
 ```sh
 git clone https://www.github.com/0w0Demonic/Tanuki

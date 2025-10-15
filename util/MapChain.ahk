@@ -1,5 +1,3 @@
-#Requires AutoHotkey v2
-
 /**
  * A map with prototype-style inheritance.
  * 

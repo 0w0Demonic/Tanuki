@@ -4,6 +4,9 @@
 #Include <AhkWin32Projection\Windows\Win32\System\SystemInformation\Apis>
 #Include <AhkWin32Projection\Windows\Win32\System\Time\Apis>
 
+/**
+ * 
+ */
 class Tanuki_Ext_SYSTEMTIME extends AquaHotkey_MultiApply {
     static __New() => super.__New(SYSTEMTIME)
 
