@@ -1,7 +1,18 @@
 #Include <AquaHotkey>
 #Include <AquaHotkey\Src\Extensions\Stream>
 #Include <AquaHotkey\Src\Builtins\ToString>
-
+/**
+ * Quick and dirty util for property dumps.
+ * 
+ * ```
+ * class Object
+ * |- DumpProps() (v2.1-alpha.10+)
+ * `- DumpOwnProps()
+ * 
+ * class ClipboardAll
+ * `- DumpAll()
+ * ```
+ */
 class Tanuki_Util_Dump extends AquaHotkey {
     class Object {
         static __New() {

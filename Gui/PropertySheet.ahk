@@ -1,10 +1,10 @@
+#Include <Tanuki\Gui\Wizard>
+#Include <Tanuki\Util\Buffers>
+#Include <Tanuki\Util\AppendableBuffer>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETHEADERW_V2>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETPAGEW>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\System\LibraryLoader\Apis>
-#Include <Tanuki\util\Buffers>
-#Include <Tanuki\util\AppendableBuffer>
-#Include <Tanuki\util\Wizard>
 
 /**
  * Defines the frame and pages of a property sheet.

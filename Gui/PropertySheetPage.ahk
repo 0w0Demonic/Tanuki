@@ -1,7 +1,6 @@
-#Include <Tanuki\util\Dialog>
-#Include <Tanuki\util\DialogItem>
+#Include <Tanuki\Gui\Dialog>
+#Include <Tanuki\Gui\DialogItem>
 #Include <Tanuki\util\Buffers>
-
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\PROPSHEETPAGEW>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\HICON>

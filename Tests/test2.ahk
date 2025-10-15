@@ -1,9 +1,8 @@
-#Include <Tanuki\util\Dialog>
-#Include <Tanuki\util\DialogItem>
-#Include <Tanuki\util\PropertySheet>
-#Include <Tanuki\util\PropertySheetPage>
-#Include <Tanuki\util\Wizard>
-
+#Include <Tanuki\Gui\Dialog>
+#Include <Tanuki\Gui\DialogItem>
+#Include <Tanuki\Gui\PropertySheet>
+#Include <Tanuki\Gui\PropertySheetPage>
+#Include <Tanuki\Gui\Wizard>
 
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\INITCOMMONCONTROLSEX>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\INITCOMMONCONTROLSEX_ICC>

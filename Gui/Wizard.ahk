@@ -1,4 +1,6 @@
-#Include <Tanuki\util\PropertySheet>
+#Include <Tanuki\Gui\PropertySheet>
+
+; TODO
 
 class Wizard extends PropertySheet {
     __New() {

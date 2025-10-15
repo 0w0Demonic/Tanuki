@@ -1,5 +1,5 @@
 #Include <AquaHotkey>
-#Include <Tanuki\util\DialogItem>
+#Include <Tanuki\Gui\DialogItem>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGTEMPLATE>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGITEMTEMPLATE>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\WINDOW_STYLE>

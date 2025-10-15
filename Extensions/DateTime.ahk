@@ -1,5 +1,5 @@
 #Include <AquaHotkey>
-#Include <Tanuki\Event>
+#Include <Tanuki\Util\Event>
 #Include <AhkWin32Projection\Windows\Win32\Foundation\SIZE>
 #Include <AhkWin32Projection\Windows\Win32\Foundation\COLORREF>
 #Include <AhkWin32Projection\Windows\Win32\Graphics\Gdi\Apis>
@@ -13,7 +13,6 @@
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMDATETIMEFORMATW>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMDATETIMESTRINGW>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\NMDATETIMEWMKEYDOWNW>
-
 /**
  * DateTime extension class.
  * 
@@ -46,16 +45,11 @@
  *    |- OnClose(Fn, Opt?)
  *    |- OnFocus(Fn, Opt?)
  *    `- OnFocusLost(Fn, Opt?)
- * 
- * class SYSTEMTIME
- * |- static Now()
- * `- ToString(Fmt := "yyyy.MM.dd HH:mm:ss")
  * ```
  */
-class Tanuki_DateTime extends AquaHotkey
-{
-class Gui {
-class DateTime {
+class Tanuki_DateTime extends AquaHotkey_MultiApply {
+    static __New() => super.__New(Gui.DateTime)
+
     ;@region Selection
     /**
      * Gets the currently selected time from the datetime control.
@@ -383,7 +377,10 @@ class DateTime {
      */
     OnChange(Fn, Opt?) {
         GetMethod(Fn)
-        return Gui.Event.OnNotify(this, Controls.DTN_DATETIMECHANGE, Change, Opt?)
+        return Gui.Event.OnNotify(
+                this, Controls.DTN_DATETIMECHANGE,
+                Change, Opt?)
+        
         Change(DtmCtl, lParam) {
             Fn(DtmCtl, NMDATETIMECHANGE(lParam))
             return 0
@@ -405,7 +402,10 @@ class DateTime {
     OnStringInput(Fn, Opt?) {
         GetMethod(Fn)
         ControlSetStyle("+" . Controls.DTN_APPCANPARSE, this)
-        return Gui.Event.OnNotify(this, Controls.DTN_USERSTRING, StringInput, Opt?)
+        return Gui.Event.OnNotify(
+                this, Controls.DTN_USERSTRING,
+                StringInput, Opt?)
+        
         StringInput(DtmCtl, lParam) {
             Fn(DtmCtl, NMDATETIMESTRINGW(lParam))
             return 0
@@ -425,7 +425,10 @@ class DateTime {
      */
     OnKeyDown(Fn, Opt?) {
         GetMethod(Fn)
-        return Gui.Event.OnNotify(this, Controls.DTN_WMKEYDOWN, KeyDown, Opt?)
+        return Gui.Event.OnNotify(
+                this, Controls.DTN_WMKEYDOWN,
+                KeyDown, Opt?)
+        
         KeyDown(DtmCtl, lParam) {
             Fn(DtmCtl, NMDATETIMEWMKEYDOWNW(lParam))
             return 0
@@ -446,7 +449,10 @@ class DateTime {
     OnFormat(Fn, Opt?) {
         GetMethod(Fn)
         ControlSetStyle("+" . Controls.DTS_APPCANPARSE, this)
-        return Gui.Event.OnNotify(this, Controls.DTN_FORMAT, Format, Opt?)
+        return Gui.Event.OnNotify(
+                this, Controls.DTN_FORMAT,
+                Format, Opt?)
+        
         Format(DtmCtl, lParam) {
             Fn(DtmCtl, NMDATETIMEFORMATW(lParam))
             return 0
@@ -466,7 +472,10 @@ class DateTime {
      */
     OnFormatQuery(Fn, Opt?) {
         GetMethod(Fn)
-        return Gui.Event.OnNotify(this, Controls.DTN_FORMATQUERY, FormatQuery, Opt?)
+        return Gui.Event.OnNotify(
+                this, Controls.DTN_FORMATQUERY,
+                FormatQuery, Opt?)
+        
         FormatQuery(DtmCtl, lParam) {
             Fn(DtmCtl, NMDATETIMEFORMATQUERYW(lParam))
             return 0
@@ -486,8 +495,9 @@ class DateTime {
      */
     OnDropDown(Fn, Opt?) {
         GetMethod(Fn)
-        return Gui.Event.OnNotify(this, Controls.DTN_DROPDOWN,
-            (DtmCtl, lParam) => Fn(DtmCtl, NMHDR(lParam), Opt?))
+        return Gui.Event.OnNotify(
+                this, Controls.DTN_DROPDOWN,
+                (DtmCtl, lParam) => Fn(DtmCtl, NMHDR(lParam), Opt?))
     }
 
     /**
@@ -504,10 +514,8 @@ class DateTime {
     OnClose(Fn, Opt?) {
         GetMethod(Fn)
         return Gui.Event.OnNotify(
-            this,
-            Controls.DTN_CLOSEUP,
-            (DtmCtl, lParam) => Fn(DtmCtl, NMHDR(lParam)),
-            Opt?)
+                this, Controls.DTN_CLOSEUP,
+                (DtmCtl, lParam) => Fn(DtmCtl, NMHDR(lParam)), Opt?)
     }
 
     /**
@@ -522,8 +530,9 @@ class DateTime {
      */
     OnFocus(Fn, Opt?) {
         GetMethod(Fn)
-        return Gui.Event.OnNotify(this, Controls.NM_SETFOCUS,
-            (DtmCtl, lParam) => Fn(DtmCtl, NMHDR(lParam)), Opt?)
+        return Gui.Event.OnNotify(
+                this, Controls.NM_SETFOCUS,
+                (DtmCtl, lParam) => Fn(DtmCtl, NMHDR(lParam)), Opt?)
     }
 
     /**
@@ -538,15 +547,12 @@ class DateTime {
      */
     OnFocusLost(Fn, Opt?) {
         GetMethod(Fn)
-        return Gui.Event.OnNotify(this, Controls.NM_KILLFOCUS,
-            (DtmCtl, lParam) => Fn(DtmCtl, NMHDR(lParam)), Opt?)
+        return Gui.Event.OnNotify(
+                this, Controls.NM_KILLFOCUS,
+                (DtmCtl, lParam) => Fn(DtmCtl, NMHDR(lParam)), Opt?)
     }
     ;@endregion
-} ; class DateTime
-} ; class Gui
-;@endregion
 } ; class Tanuki_DateTime extends AquaHotkey
-
 
 #Include <AquaHotkey\Src\Builtins\StringMatching>
 #Include <AquaHotkey\Src\Builtins\Pipes>

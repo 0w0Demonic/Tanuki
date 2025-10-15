@@ -1,5 +1,4 @@
-#Requires AutoHotkey v2.0
-
+#Requires AutoHotkey v2
 /**
  * A subclass of `Buffer` that adds an internal write position and convenience
  * methods for appending data sequentially. It's useful for creating binary
