@@ -51,6 +51,15 @@ you can forget about manual structs, message constants and raw DLL calls.
 It lets you concentrate on what's important and makes working with Win32
 actually fun.
 
+```ahk
+myRect := RECT({ top: 20, bottom: 100, left: 0, right: 100 })
+hDC := Gdi.GetDC(0)
+
+hIcon := WindowsAndMessaging.GetClassLongPtrW(
+        Hwnd,
+        GET_CLASS_LONG_INDEX.GCLP_HICON)
+```
+
 ### 2. Designed for Growth
 
 *A GUI library is never "done".*
