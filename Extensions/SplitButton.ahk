@@ -10,6 +10,7 @@
  * ```
  * class Gui
  * |- AddSplitButton(Opt := "", Txt?)
+ * |
  * `- class SplitButton extends Gui.Button
  *    |- Settings { get; set; }
  *    |- OnDropDown(Fn, Opt?)

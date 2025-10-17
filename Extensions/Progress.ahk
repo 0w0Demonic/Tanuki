@@ -52,9 +52,6 @@ class Gui {
         Prog := this.AddProgress(Opt?)
         ControlSetStyle("+" . Controls.PBS_MARQUEE, Prog)
         ObjSetBase(Prog, Gui.MarqueeProgress.Prototype)
-        if (!IsInteger(Interval)) {
-            throw TypeError("Expected an Integer",, Type(Interval))
-        }
         Prog.Interval := Interval
         return Prog
     }

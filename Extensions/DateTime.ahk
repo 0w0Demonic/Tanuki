@@ -321,8 +321,6 @@ class Tanuki_DateTime extends AquaHotkey_MultiApply {
         }
     }
 
-    ; TODO Open() => Void
-
     /**
      * Closes the date time control.
      */

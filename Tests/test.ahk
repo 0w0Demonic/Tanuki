@@ -247,7 +247,7 @@ TestDialog() {
 
     ;dlg.AddItem(0x0080, 1, 70, 70, 60, 14, 0x50010001, 0, "OK")
     dlg.Finalize()
-    
+
     cb := CallbackCreate(DlgProc, "F", 4)
     result := DllCall("DialogBoxIndirectParamW", "ptr", 0, "ptr", dlg.Ptr(), "ptr", 0, "ptr", cb, "ptr", 0, "int")
     CallbackFree(cb)
@@ -283,7 +283,6 @@ TestDialog2() {
     CallbackFree(cb)
     
     MsgBox "Dialog result: " result
-
 }
 
 TestPropertySheet() {

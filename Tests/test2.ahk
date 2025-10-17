@@ -22,8 +22,6 @@ GetDlg(Title, Text) {
                 .Size(80, 20)
                 .Id(1)
         )
-    Dlg.style |= WindowsAndMessaging.DS_CONTROL
-    Dlg.style |= WindowsAndMessaging.DS_3DLOOK
     return Dlg
 }
 

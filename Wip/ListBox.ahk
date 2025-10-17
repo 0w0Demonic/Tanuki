@@ -6,7 +6,10 @@
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\DRAGLISTINFO>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\DRAGLISTINFO_NOTIFICATION_FLAGS>
 
-class Tanuki_DragList extends AquaHotkey {
+/**
+ * 
+ */
+class Tanuki_ListBox extends AquaHotkey {
 class Gui {
     /**
      * 
@@ -29,6 +32,7 @@ class Gui {
                 Msg := WindowsAndMessaging.RegisterWindowMessageW(
                                 Controls.DRAGLISTMSGSTRING)
                 this.DefineProp("MessageNumber", { Get: (_) => Msg })
+                
                 return Msg
             }
         }
@@ -78,7 +82,6 @@ G.OnMessage(Gui.DragList.MessageNumber, (GuiObj, wParam, lParam, Msg) {
     case DRAGLISTINFO_NOTIFICATION_FLAGS.DL_DRAGGING:
         Pt := Info.ptCursor
         DllCall("ScreenToClient", "Ptr", DL.Hwnd, "Ptr", Pt)
-        ToolTip(Pt.x " " Pt.y)
         Item := Controls.LBItemFromPt(DL.Hwnd, Pt, false)
         if (Item != -1) {
             MsgBox()

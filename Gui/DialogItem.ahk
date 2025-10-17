@@ -1,5 +1,6 @@
 #Include <AquaHotkey>
 #Include <Tanuki\Util\AppendableBuffer>
+#Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\Apis>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\DLGITEMTEMPLATE>
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\WINDOW_STYLE>
 
@@ -56,7 +57,7 @@ class DialogItem extends AppendableBuffer {
      * @returns {DialogItem}
      */
     static Text(Text) => this.Text(Text).Type(DialogItem.Type.Static)
-
+    
     /**
      * Whether the dialog item has been properly written into the buffer.
      * {@link DialogItem#Build}

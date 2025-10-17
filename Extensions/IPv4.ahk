@@ -18,6 +18,9 @@
  *    |- IsBlank { get; }
  *    |- Focus(Index)
  *    |- SetRange(Index, Lo := 0, Hi := 255)
+ *    |- OnFocus(Fn, Opt?)
+ *    |- OnFocusLost(Fn, Opt?)
+ *    |- OnChange(Fn, Opt?)
  *    `- OnFieldChange(Fn, Opt?)
  * ```
  * 

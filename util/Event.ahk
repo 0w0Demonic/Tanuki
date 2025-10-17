@@ -11,20 +11,24 @@
  *    |- static OnNotify(GuiObj, Msg, Notif, Opt?)
  *    `- static OnCommand(GuiObj, Msg, Cmd, Opt?)
  * ```
+ * 
+ * Note: this control is composed of 4 child
  */
 class Tanuki_Gui_Event extends AquaHotkey_MultiApply {
-    static __New() {
-        if (VerCompare(A_AhkVersion, "<v2.1-alpha.3")) {
-            this.DeleteProp("OnMessage")
-        }
-        super.__New(Gui)
-    }
+    static __New() => super.__New(Gui)
 
     /**
      * Simple wrapper over a Gui event (message, notification or command) with
      * additional `Remove()` method for unregistering.
      */
     class Event {
+        static __New() {
+            ; `.OnMessage()` method is v2.1-alpha.7+
+            if (VerCompare(A_AhkVersion, "<v2.1-alpha.7")) {
+                this.DeleteProp("OnMessage")
+            }
+        }
+
         /**
          * Creates a new `Gui.Event`.
          * 
