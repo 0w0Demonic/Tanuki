@@ -1031,8 +1031,3 @@ class Tanuki_Edit extends AquaHotkey_MultiApply {
     }
 }
 ;@endregion
-
-g := Gui()
-e := g.AddEdit()
-g.Show()
-e.AllowInput := false

@@ -11,3 +11,6 @@
 - Add Time API for DateTime controls. It should have an easy way of doing
   time arithmetic like e.g. `.PlusDays(4)`.
 - Add SysLink? It already exists as `Gui.Link`
+- BUTTON_SPLITINFO extension
+- Allow DragList to register messages directly, in which case they must be dispatched
+- resize monthcal dropped down by datetime control when the theme is removed

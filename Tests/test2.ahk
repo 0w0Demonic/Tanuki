@@ -2,7 +2,7 @@
 #Include <Tanuki\Gui\DialogItem>
 #Include <Tanuki\Gui\PropertySheet>
 #Include <Tanuki\Gui\PropertySheetPage>
-#Include <Tanuki\Gui\Wizard>
+#Include <Tanuki\Wip\Wizard>
 
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\INITCOMMONCONTROLSEX>
 #Include <AhkWin32Projection\Windows\Win32\UI\Controls\INITCOMMONCONTROLSEX_ICC>
@@ -54,8 +54,7 @@ GetPage(Title, Text) {
 Page := GetPage("Page 1", "Text 1")
 Page.dwFlags |= Controls.PSP_USEHEADERSUBTITLE | Controls.PSP_USEHEADERTITLE
 
-
-Wiz := Wizard97()
+Wiz := AeroWizard()
     .Title("Cool title")
     .Pages(
         Page,

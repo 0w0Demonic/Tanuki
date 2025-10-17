@@ -42,7 +42,6 @@ class Gui {
         /**
          * Retrieves and changes the current options set for the split button
          * control.
-         * TODO extend BUTTON_SPLITINFO
          * 
          * @param   {BUTTON_SPLITINFO}  value  the new options
          * @return  {BUTTON_SPLITINFO}
@@ -108,12 +107,3 @@ class Gui {
     }
 } ; class Gui
 } ; class Tanuki_SplitButton extends AquaHotkey
-
-g := Gui()
-s := g.AddSplitButton("w200 h200", "I hate ni")
-g.Show()
-
-Sleep(2000)
-s.DropDown()
-Sleep(1000)
-s.UndoDropDown()

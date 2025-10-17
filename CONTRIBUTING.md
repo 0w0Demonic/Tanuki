@@ -3,14 +3,14 @@
 First of all, thanks for considering contributing to Tanuki!
 
 From typo fixes to architectural ideas, your effort is greatly appreciated.
-Otherwise if you'd like to request more features, feel free to open an issue
+Otherwise, if you'd like to request more features, feel free to open an issue
 and I'll try my best.
 
 Before you start, here are a few principles that guide development:
 
 - Features are meant to feel natural, like they were always meant to be there.
-  Prefer extending existing classes, and avoid simple utility function that sit
-  "next to" the design.
+  Prefer extending existing classes, and avoid simple utility functions that
+  sit "next to" the design.
 - A feature is only worth adding if it can be expressed (reasonably) clearly.
   Make sure you're not just dropping functions with a dozen parameters or
   obscure names.
@@ -68,11 +68,11 @@ class Tanuki_EditWebSearch extends AquaHotkey_MultiApply {
      * 
      * @param   {Func}      Fn   the function to be called
      * @param   {Integer?}  Opt  add/remove the callback
-     * @returns {this}
+     * @returns {Gui.Event}
      */
     OnWebSearch(Fn, Opt?) {
         this.EnableWebSearch()
-        Gui.Event.OnNotify(
+        return Gui.Event.OnNotify(
                 this,
                 Controls.EN_SEARCHWEB,
                 (EditCtl, lParam) => Fn(EditCtl, NMSEARCHWEB(lParam)),

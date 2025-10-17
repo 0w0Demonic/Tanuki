@@ -273,14 +273,12 @@ class Gui {
             SendMessage(Controls.PBM_SETMARQUEE, false, this.Interval, this)
             this.DefineProp("IsRunning", { Get: (_) => false })
         }
+
+        /**
+         * Returns the type of GUI control.
+         * @returns {String}
+         */
+        Type => "MarqueeProgress"
     } ; class MarqueeProgress extends Gui.Progress
 } ; class Gui
 } ; class Tanuki_ProgressBar extends AquaHotkey
-
-g := Gui()
-p := g.AddMarqueeProgress()
-p.Start()
-g.Show()
-
-Sleep(1000)
-p.Interval := 60

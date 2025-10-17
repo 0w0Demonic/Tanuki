@@ -5,7 +5,6 @@
 #Include <AhkWin32Projection\Windows\Win32\UI\WindowsAndMessaging\Apis>
 
 /**
- * 
  * A wrapper for the `SysIpAddress32` control used for selecting IPv4 addresses,
  * directly integrated as `GUI.IPv4` class. This class is automatically added
  * as static nested class to the `Gui` type.

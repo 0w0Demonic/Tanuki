@@ -338,7 +338,6 @@ class Tanuki_DateTime extends AquaHotkey_MultiApply {
     Info {
         get {
             Res := DATETIMEPICKERINFO()
-            MsgBox(Res.cbSize)
             SendMessage(Controls.DTM_GETDATETIMEPICKERINFO, 0, Res, this)
             return Res
         }
@@ -401,7 +400,7 @@ class Tanuki_DateTime extends AquaHotkey_MultiApply {
      */
     OnStringInput(Fn, Opt?) {
         GetMethod(Fn)
-        ControlSetStyle("+" . Controls.DTN_APPCANPARSE, this)
+        ControlSetStyle("+" . Controls.DTS_APPCANPARSE, this)
         return Gui.Event.OnNotify(
                 this, Controls.DTN_USERSTRING,
                 StringInput, Opt?)
@@ -553,23 +552,3 @@ class Tanuki_DateTime extends AquaHotkey_MultiApply {
     }
     ;@endregion
 } ; class Tanuki_DateTime extends AquaHotkey
-
-#Include <AquaHotkey\Src\Builtins\StringMatching>
-#Include <AquaHotkey\Src\Builtins\Pipes>
-#Include <AquaHotkey\Src\Builtins\Array>
-
-g := Gui()
-d := g.AddDateTime()
-
-MsgBox(d.Info.HexDump())
-
-d.OnDropDown((*) {
-    d.BackgroundColor := 0x000000
-    d.MonthBackgroundColor := 0x000000
-    d.TextColor := 0xFFFFFF
-})
-
-g.Show()
-
-Sleep(2000)
-MsgBox(d.Clear())
