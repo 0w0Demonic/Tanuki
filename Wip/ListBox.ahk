@@ -14,6 +14,31 @@ class Gui {
     /**
      * 
      */
+    class FileList extends Gui.ListBox {
+        Type => "FileList"
+    } ; class FileList extends Gui.ListBox
+
+    class ListBox {
+        ; TODO probably make this a separate class to deal with the "TextControl" part
+        DirList(FilePath, FileTypes := 0, TextControl?) {
+            if (!(FilePath is String)) {
+                throw TypeError("Expected a String",, Type(FilePath))
+            }
+            if (!IsInteger(FileTypes)) {
+                throw TypeError("Expected an Integer",, Type(FileTypes))
+            }
+            IdListBox := WindowsAndMessaging.GetDlgCtrlID(this.Hwnd)
+            IdStatic := IsSet(TextControl) && WindowsAndMessaging.GetDlgCtrlID(TextControl.Hwnd)
+
+            if (!Controls.DlgDirListW(this.Gui.Hwnd, FilePath, IdListBox, IdStatic, FileTypes)) {
+                throw OSError(A_LastError)
+            }
+        }
+    } ; class ListBox
+
+    /**
+     * 
+     */
     AddDragList(Opt?, Items?) {
         ListBox := this.AddListBox(Opt?, Items?)
         if (!Controls.MakeDragList(ListBox.Hwnd)) {
@@ -62,34 +87,19 @@ class Gui {
             }
             Controls.DrawInsert(this.Gui.Hwnd, this.Hwnd, Index - 1)
         }
-    }
+    } ; class DragLst extends Gui.ListBox
 } ; class Gui
 } ; class Tanuki_DragList extends AquaHotkey
 
 G := Gui()
-Arr := Array()
-Loop 50 {
-    Arr.Push(A_Index)
-}
-DL := G.AddDragList("w600 h600", Arr)
-G.OnMessage(Gui.DragList.MessageNumber, (GuiObj, wParam, lParam, Msg) {
-    Info := DRAGLISTINFO(lParam)
-
-    switch (Info.uNotification)
-    {
-    case DRAGLISTINFO_NOTIFICATION_FLAGS.DL_BEGINDRAG:
-        return true
-    case DRAGLISTINFO_NOTIFICATION_FLAGS.DL_DRAGGING:
-        Pt := Info.ptCursor
-        DllCall("ScreenToClient", "Ptr", DL.Hwnd, "Ptr", Pt)
-        Item := Controls.LBItemFromPt(DL.Hwnd, Pt, false)
-        if (Item != -1) {
-            MsgBox()
-        }
-    }
-})
-
+Txt := G.AddText("w350 r2")
+LB := G.AddListBox("w350 h350")
+LB.DirList("C:\Users\roemer\Desktop", unset, Txt)
 G.Show()
+
+^+b:: {
+    MsgBox(ControlGetText(LB))
+}
 
 ^+a:: {
     ExitApp()

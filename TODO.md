@@ -4,7 +4,7 @@
 
 - `ControlSetStyle("+" . Controls..., this)` kind of sucks manually, fix this
 - Add property to find out control ID (`GetDlgCtrlID`)
-- `Gui#ControlById()`
+- `Gui#ControlById()`, `Gui.Control#Id { get; }`
 
 ## Controls
 
